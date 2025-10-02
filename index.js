@@ -15,7 +15,7 @@ const port = process.env.PORT;
 app.use(express.json());app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://main.dxxxxxxxx.amplifyapp.com"
+        "https://main.dr3pvtmhloycm.amplifyapp.com/"
     ],
     credentials: true // Opzionale: utile se gestisci cookie/sessioni cross-origin
 }));
