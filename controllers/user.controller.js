@@ -27,11 +27,7 @@ module.exports = {
 
     loginUser: async (req, res) => {
         const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email e password sono obbligatorie' });
-        }
-
+        
         try {
             const user = await User.findOne({ email });
             if (!user) {
@@ -48,7 +44,7 @@ module.exports = {
             res.status(200).json(userResponse);
 
         } catch (error) {
-            reses.status(500).json({ error: error.message});
+            reses.status(500).json({ error: error.message });
         }
     },
 
