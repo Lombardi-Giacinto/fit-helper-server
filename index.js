@@ -12,15 +12,17 @@ require('dotenv').config();
 const uri = process.env.MONGODB_URI;
 const port = process.env.PORT;
 
-app.use(express.json());
-app.use(cors());
+app.use(express.json());app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        "https://main.dxxxxxxxx.amplifyapp.com"
+    ],
+    credentials: true // Opzionale: utile se gestisci cookie/sessioni cross-origin
+}));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser('secret'))
 
 //routes
-app.use(cors({
-  origin: "http://localhost:5173"
-}));
 app.use("/", router);
 
 // Connection to MongoDB

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const UserController = require('../controllers/user.controllerl');
+const UserController = require('../controllers/user.controller');
 
 router.get('/', (req, res) => {
   res.json({message: 'root unused'})
