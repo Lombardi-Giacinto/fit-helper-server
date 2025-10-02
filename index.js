@@ -31,7 +31,7 @@ mongoose.connect(uri)
     });
 
 app.get('/', (req, res) => {
-    res.send('Home');
+    res.send('Online Home');
 });
 
 
