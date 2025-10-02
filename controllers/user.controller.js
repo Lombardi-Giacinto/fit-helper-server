@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const bcrypt = require('bcrypt');
 
 module.exports = {
     createUser: (req, res) => {
@@ -14,28 +15,41 @@ module.exports = {
             weight: req.body.weight
         })
             .then(user => {
-                res.cookie("user", user.id, { maxAge: 900000, httpOnly: true })
-                    .status(200).json(user);
-            }
-
-            )
+                // Rimuovi la password dalla risposta
+                const userResponse = user.toObject();
+                delete userResponse.password;
+                res.status(201).json(userResponse); // 201 Created è più appropriato
+            })
             .catch(error =>
-                res.status(500).json({ error: error.message })
+                res.status(400).json({ error: error.message })
             )
     },
 
-    loginUser: (req, res) => {
-        User.findOne({
-            email: req.body.email,
-            password: req.body.password
-        })
-            .then(user => {
-                if (user) res.status(200).json(user)
-                else res.status(404).json({ error: 'User not found' })
-            })
-            .catch(error =>
-                res.status(500).json({ error: error.message })
-            )
+    loginUser: async (req, res) => {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email e password sono obbligatorie' });
+        }
+
+        try {
+            const user = await User.findOne({ email });
+            if (!user) {
+                return res.status(401).json({ error: 'Credenziali non valide' });
+            }
+
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                return res.status(401).json({ error: 'Credenziali non valide' });
+            }
+
+            const userResponse = user.toObject();
+            delete userResponse.password;
+            res.status(200).json(userResponse);
+
+        } catch (error) {
+            reses.status(500).json({ error: error.message});
+        }
     },
 
     updateUser: (req, res) => {

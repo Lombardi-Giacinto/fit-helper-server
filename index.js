@@ -1,8 +1,7 @@
 const express = require('express');
 const cors = require("cors");
 const mongoose = require('mongoose');
-const router = require('./routes/api.route')
-const User = require('./models/user.model');
+const router = require('./routes/users.route'); // Assicurati che il path sia corretto
 const app = express();
 const cookieParser = require('cookie-parser');
 
@@ -11,19 +10,24 @@ const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const uri = process.env.MONGODB_URI;
 const port = process.env.PORT;
+const cookieSecret = process.env.COOKIE_SECRET || 'default-secret';
 
-app.use(express.json());app.use(cors({
+app.use(express.json());
+app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://main.dr3pvtmhloycm.amplifyapp.com/"
+        "https://main.dr3pvtmhloycm.amplifyapp.com"
     ],
     credentials: true // Opzionale: utile se gestisci cookie/sessioni cross-origin
 }));
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser('secret'))
+app.use(cookieParser(cookieSecret));
 
 //routes
-app.use("/", router);
+app.get('/', (req, res) => {
+    res.send('Homeeeee');
+});
+app.use('/api', router);
 
 // Connection to MongoDB
 mongoose.connect(uri)
@@ -38,7 +42,7 @@ mongoose.connect(uri)
     });
 
 app.get('/', (req, res) => {
-    res.send('Homeeeee');
+    res.send('Home2');
 });
 
 
