@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require("cors");
 const mongoose = require('mongoose');
 const router = require('./routes/api.route')
 const User = require('./models/user.model');
@@ -12,10 +13,14 @@ const uri = process.env.MONGODB_URI;
 const port = process.env.PORT;
 
 app.use(express.json());
+app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser('secret'))
 
 //routes
+app.use(cors({
+  origin: "http://localhost:5173"
+}));
 app.use("/", router);
 
 // Connection to MongoDB
