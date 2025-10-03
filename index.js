@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require("cors");
 const mongoose = require('mongoose');
-const router = require('./routes/users.route'); // Assicurati che il path sia corretto
+const router = require('./routes/api.route');
 const app = express();
 const cookieParser = require('cookie-parser');
 
@@ -12,20 +12,31 @@ const uri = process.env.MONGODB_URI;
 const port = process.env.PORT;
 const cookieSecret = process.env.COOKIE_SECRET || 'default-secret';
 
-app.use(express.json());
+//CORS
+const allowedOrigins = [
+    "https://main.dr3pvtmhloycm.amplifyapp.com",
+    "http://localhost:5173"
+];
 app.use(cors({
-    origin: [
-        "http://localhost:5173",
-        "https://main.dr3pvtmhloycm.amplifyapp.com"
-    ],
-    credentials: true // Opzionale: utile se gestisci cookie/sessioni cross-origin
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+//middleware
+app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(cookieSecret));
 
 //routes
 app.get('/', (req, res) => {
-    res.send('Homeeeee');
+    res.send('Home3');
 });
 app.use('/api', router);
 
@@ -46,7 +57,6 @@ app.get('/', (req, res) => {
 });
 
 
-app.use('/api', router);
 app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });

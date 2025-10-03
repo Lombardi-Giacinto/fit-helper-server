@@ -15,10 +15,9 @@ module.exports = {
             weight: req.body.weight
         })
             .then(user => {
-                // Rimuovi la password dalla risposta
                 const userResponse = user.toObject();
                 delete userResponse.password;
-                res.status(201).json(userResponse); // 201 Created è più appropriato
+                res.status(201).json(userResponse);
             })
             .catch(error =>
                 res.status(400).json({ error: error.message })
@@ -44,7 +43,7 @@ module.exports = {
             res.status(200).json(userResponse);
 
         } catch (error) {
-            reses.status(500).json({ error: error.message });
+            res.status(500).json({ error: error.message });
         }
     },
 
