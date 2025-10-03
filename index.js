@@ -23,7 +23,7 @@ const corsOptions = {
       // richieste dirette dal server (curl, postman)
       callback(null, true);
     } else if (allowedOrigins.includes(origin)) {
-      callback(null, true);
+      callback(null, origin); // Pass the specific origin back
     } else {
       callback(new Error("CORS not allowed"));
     }
@@ -45,7 +45,18 @@ app.get('/', (req, res) => {
 });
 app.use('/api', router);
 
-// Connection to MongoDB
+// Catch-all for 404 Not Found
+app.use((req, res, next) => {
+    res.status(404).json({ error: 'Route not found' });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// Connection to MongoDB and server start
 mongoose.connect(uri)
     .then(() => {
         console.log('Connesso a MongoDB');
@@ -55,13 +66,9 @@ mongoose.connect(uri)
     })
     .catch(err => {
         console.error('Connection error MongoDB:', err);
+        process.exit(1);
     });
 
 app.get('/', (req, res) => {
     res.send('Home2');
-});
-
-
-app.use((req, res) => {
-    res.status(404).json({ error: 'Route not found' });
 });
