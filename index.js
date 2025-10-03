@@ -14,20 +14,23 @@ const cookieSecret = process.env.COOKIE_SECRET || 'default-secret';
 
 //CORS
 const allowedOrigins = [
-    "https://main.dr3pvtmhloycm.amplifyapp.com",
-    "http://localhost:5173"
+  "https://main.dr3pvtmhloycm.amplifyapp.com",
+  "http://localhost:5173"
 ];
-app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error("Not allowed by CORS"));
-        }
-    },
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"]
-}));
+const corsOptions = {
+  origin: function(origin, callback) {
+    if (!origin) {
+      // richieste dirette dal server (curl, postman)
+      callback(null, true);
+    } else if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS not allowed"));
+    }
+  },
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
