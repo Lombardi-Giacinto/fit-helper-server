@@ -16,9 +16,15 @@ const createUser = (req, res) => {
         weight: req.body.weight
     })
         .then(user => {
+            const token = jwt.sign({
+                sub: user._id,
+                email: user.email,
+            },
+                jwtSecret, { expiresIn: '1h' });
+
             const userResponse = user.toObject();
             delete userResponse.password;
-            res.status(201).json(userResponse);
+            res.status(201).json({ user: userResponse, token: `Bearer ${token}` });
         })
         .catch(error =>
             res.status(400).json({ error: error.message })
@@ -27,7 +33,7 @@ const createUser = (req, res) => {
 
 const loginUser = (req, res) => {
     const token = jwt.sign({
-        sub: req.user._id, // 'sub' (subject) è una convenzione per l'ID dell'utente.
+        sub: req.user._id, 
         email: req.user.email,
     },
         jwtSecret, { expiresIn: '1h' });
