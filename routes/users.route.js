@@ -21,8 +21,11 @@ router.get('/loginGoogle/start', passport.authenticate('google', { scope: ['prof
 // Rotta di callback per Google (corrisponde all'URI di reindirizzamento autorizzato)
 router.get('/loginGoogle', passport.authenticate('google', { session: false }), UserController.loginGoogle);
 
+
 // Protected routes that require jwt
 router.put('/:id', passport.authenticate('jwt', { session: false }), UserController.updateUser)
 router.delete('/:id', passport.authenticate('jwt', { session: false }), UserController.deleteUser);
+// Rotta per ottenere i dati dell'utente loggato
+router.get('/me', passport.authenticate('jwt', { session: false }), UserController.getMe);
 
 export default router;

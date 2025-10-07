@@ -80,12 +80,20 @@ const checkEmail = (req, res) => {
     });
 };
 
+const getMe = (req, res) => {
+    // req.user è popolato dal middleware passport.authenticate('jwt')
+    const userResponse = req.user.toObject();
+    delete userResponse.password;
+    res.status(200).json(userResponse);
+};
+
 const loginGoogle = (req, res) => {
     const { user, token } = req.user;
-    const userResponse = user.toObject();
-    delete userResponse.password; 
-
-    res.status(200).json({ user: userResponse, token: `Bearer ${token}` });
+    // Non puoi inviare sia un JSON che un redirect.
+    // Il redirect è l'azione corretta in un flusso OAuth2.
+    // Reindirizza l'utente a una rotta del frontend (es. /auth/callback)
+    // e passa il token come parametro URL.
+    res.redirect(`https://fithelper.duckdns.org/auth/callback?token=${token}`);
 }
 
-export default { createUser, loginUser, updateUser, deleteUser ,checkEmail ,loginGoogle};
+export default { createUser, loginUser, updateUser, deleteUser ,checkEmail ,loginGoogle, getMe };
