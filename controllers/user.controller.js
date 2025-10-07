@@ -33,7 +33,7 @@ const createUser = (req, res) => {
 
 const loginUser = (req, res) => {
     const token = jwt.sign({
-        sub: req.user._id, 
+        sub: req.user._id,
         email: req.user.email,
     },
         jwtSecret, { expiresIn: '1h' });
@@ -71,4 +71,21 @@ const deleteUser = (req, res) => {
         });
 };
 
-export default { createUser, loginUser, updateUser, deleteUser };
+const checkEmail = (req, res) => {
+  User.findOne({email: req.params.email})
+    .then(user => res.json({ exists: !!user }))
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ message: error.message });
+    });
+};
+
+const loginGoogle = (req, res) => {
+    const { user, token } = req.user;
+    const userResponse = user.toObject();
+    delete userResponse.password; 
+
+    res.status(200).json({ user: userResponse, token: `Bearer ${token}` });
+}
+
+export default { createUser, loginUser, updateUser, deleteUser ,checkEmail ,loginGoogle};
