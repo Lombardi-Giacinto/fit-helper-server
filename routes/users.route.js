@@ -16,9 +16,9 @@ router.get("/checkEmail/:email", UserController.checkEmail);
 
 router.post('/login', passport.authenticate('local', { session: false }), UserController.loginUser);
 
-// Rotta per iniziare l'autenticazione Google
+// Rotta per iniziare l'autenticazione Google e creazione JWT
 router.get('/loginGoogle/start', passport.authenticate('google', { scope: ['profile', 'email'] }));
-// Rotta di callback per Google (corrisponde all'URI di reindirizzamento autorizzato)
+// Rotta di callback per Google (URI di reindirizzamento autorizzato)
 router.get('/loginGoogle', passport.authenticate('google', { session: false }), UserController.loginGoogle);
 
 

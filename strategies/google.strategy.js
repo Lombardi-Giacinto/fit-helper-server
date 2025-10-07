@@ -1,9 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"
-import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
-
-const jwtSecret = process.env.JWT_SECRET;
 
 passport.use(
   new GoogleStrategy(
@@ -22,21 +19,15 @@ passport.use(
           user = await User.create({
             googleId: profile.id,
             email: profile.emails[0].value,
-            name: profile.given_name,
-            surname: profile.family_name
+            name: profile.name.givenName,
+            surname: profile.name.family_name
           });
         }
 
-        // Genera JWT
-        const token = jwt.sign(
-          { sub: user._id, email: user.email },
-          jwtSecret,
-          { expiresIn: "1h" }
-        );
-
-        return done(null, { user, token }); // lo passiamo al controller
+        // La strategia ora passa solo l'utente. Il controller gestirà la sessione/token.
+        return done(null, user);
       } catch (err) {
-        done(err, null);
+        return done(err, null);
       }
     }
   )

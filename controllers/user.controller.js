@@ -72,28 +72,45 @@ const deleteUser = (req, res) => {
 };
 
 const checkEmail = (req, res) => {
-  User.findOne({email: req.params.email})
-    .then(user => res.json({ exists: !!user }))
-    .catch(error => {
-      console.error(error);
-      res.status(500).json({ message: error.message });
-    });
+    User.findOne({ email: req.params.email })
+        .then(user => res.json({ exists: !!user }))
+        .catch(error => {
+            console.error(error);
+            res.status(500).json({ message: error.message });
+        });
 };
 
+const loginGoogle = (req, res) => {
+    try {
+        const user = req.user;
+        const token = jwt.sign({ sub: user._id, email: user.email }, jwtSecret, { expiresIn: '1h' });
+
+        res.cookie('access_token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None',
+            maxAge: 60 * 60 * 1000 // 1h
+        });
+
+        res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/status=success`);
+    } catch (error) {
+        console.error('Error during Google login process:', error);
+        res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/login?status=error`);
+    }
+}
+
 const getMe = (req, res) => {
-    // req.user è popolato dal middleware passport.authenticate('jwt')
     const userResponse = req.user.toObject();
     delete userResponse.password;
     res.status(200).json(userResponse);
 };
 
-const loginGoogle = (req, res) => {
-    const { user, token } = req.user;
-    // Non puoi inviare sia un JSON che un redirect.
-    // Il redirect è l'azione corretta in un flusso OAuth2.
-    // Reindirizza l'utente a una rotta del frontend (es. /auth/callback)
-    // e passa il token come parametro URL.
-    res.redirect(`https://fithelper.duckdns.org/auth/callback?token=${token}`);
-}
-
-export default { createUser, loginUser, updateUser, deleteUser ,checkEmail ,loginGoogle, getMe };
+export default {
+    createUser,
+    loginUser,
+    updateUser,
+    deleteUser,
+    checkEmail,
+    loginGoogle,
+    getMe
+};
