@@ -8,16 +8,14 @@ const sendTokenCookie = (user, statusCode, res) => {
 
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Usa cookie sicuri in produzione
+        secure: true,
         sameSite: 'None',
-        maxAge: 60 * 60 * 1000 // 1 ora, come la scadenza del token
+        maxAge: 60 * 60 * 1000 // 1 h
     };
+    res.cookie('access_token', token, cookieOptions);
 
     const userResponse = user.toObject();
     delete userResponse.password;
-
-    res.cookie('access_token', token, cookieOptions);
-
     res.status(statusCode).json({
         user: userResponse,
     });
@@ -26,16 +24,16 @@ const sendTokenCookie = (user, statusCode, res) => {
 const createUser = async (req, res) => {
     try {
         const user = await User.create({
-        name: req.body.name,
-        surname: req.body.surname,
-        email: req.body.email,
-        password: req.body.password,
-        birthdate: req.body.birthdate,
-        male: req.body.male,
-        activity: req.body.activity,
-        height: req.body.height,
-        weight: req.body.weight
-    });
+            name: req.body.name,
+            surname: req.body.surname,
+            email: req.body.email,
+            password: req.body.password,
+            birthdate: req.body.birthdate,
+            male: req.body.male,
+            activity: req.body.activity,
+            height: req.body.height,
+            weight: req.body.weight
+        });
         sendTokenCookie(user, 201, res);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -43,7 +41,6 @@ const createUser = async (req, res) => {
 };
 
 const loginUser = (req, res) => {
-    // L'oggetto utente è già in req.user grazie alla strategia 'local' di passport
     sendTokenCookie(req.user, 200, res);
 };
 
@@ -86,7 +83,6 @@ const checkEmail = (req, res) => {
 
 const loginGoogle = (req, res) => {
     try {
-        // Usiamo le stesse opzioni del cookie definite in sendTokenCookie
         const token = jwt.sign({ sub: req.user._id, email: req.user.email }, jwtSecret, { expiresIn: '1h' });
         const cookieOptions = {
             httpOnly: true,
@@ -95,7 +91,7 @@ const loginGoogle = (req, res) => {
             maxAge: 60 * 60 * 1000 // 1 ora
         };
         res.cookie('access_token', token, cookieOptions);
-        console.log("AAAAA",res.cookie);
+        console.log("AAAAA", token);
         res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/status=success`);
     } catch (error) {
         console.error('Error during Google login process:', error);
@@ -104,6 +100,7 @@ const loginGoogle = (req, res) => {
 }
 
 const getMe = (req, res) => {
+    console.log("CCCCC",req.user);
     const userResponse = req.user.toObject();
     delete userResponse.password;
     res.status(200).json(userResponse);
