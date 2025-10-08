@@ -43,6 +43,14 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 app.use(passport.initialize());
 
+// Middleware di debug per i cookie
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Richiesta in arrivo: ${req.method} ${req.originalUrl}`);
+  console.log('[DEBUG] Headers della richiesta:', req.headers);
+  console.log('[DEBUG] Cookie ricevuti da cookieParser:', req.cookies);
+  next();
+});
+
 //routes
 app.get('/', (req, res) => {
   res.json('Home5');

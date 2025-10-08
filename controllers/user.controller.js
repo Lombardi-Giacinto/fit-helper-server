@@ -10,11 +10,15 @@ const setAuthCookie = (res, user) => {
         httpOnly: true,
         secure: true,
         sameSite: 'None',
+        domain: 'fithelper.duckdns.org',
+        path: '/',
         maxAge: 60 * 60 * 1000 // 1 h
     };
 
     // Usiamo res.setHeader per un controllo più esplicito e per evitare header multipli.
     const cookieString = cookie.serialize('access_token', token, cookieOptions);
+
+    console.log('[DEBUG] Impostazione cookie nel controller:', cookieString);
     res.setHeader('Set-Cookie', cookieString);
 };
 
