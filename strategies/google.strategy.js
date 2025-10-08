@@ -21,12 +21,11 @@ passport.use(
           user = await User.create({
             googleId: profile.id,
             email: profile.emails[0].value,
-            name: profile.name?.givenName || profile.displayName, // Fallback to displayName
-            surname: profile.name?.familyName || '' // Fallback to an empty string if not present
+            name: profile.name?.givenName || profile.displayName,
+            surname: profile.name?.familyName || ''
           });
         }
-
-        // La strategia ora passa solo l'utente. Il controller gestirà la sessione/token.
+ 
         return done(null, user);
       } catch (err) {
         return done(err, null);

@@ -86,20 +86,20 @@ const checkEmail = (req, res) => {
 
 const loginGoogle = (req, res) => {
     try {
-        const user = req.user;
-        const token = jwt.sign({ sub: user._id, email: user.email }, jwtSecret, { expiresIn: '1h' });
-
-        res.cookie('access_token', token, {
+        // Usiamo le stesse opzioni del cookie definite in sendTokenCookie
+        const token = jwt.sign({ sub: req.user._id, email: req.user.email }, jwtSecret, { expiresIn: '1h' });
+        const cookieOptions = {
             httpOnly: true,
             secure: true,
             sameSite: 'None',
-            maxAge: 60 * 1000 // 1 minute
-        });
-
+            maxAge: 60 * 60 * 1000 // 1 ora
+        };
+        res.cookie('access_token', token, cookieOptions);
+        console.log("AAAAA",res.cookie);
         res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/status=success`);
     } catch (error) {
         console.error('Error during Google login process:', error);
-        res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/login?status=error`);
+        res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/status=error`);
     }
 }
 

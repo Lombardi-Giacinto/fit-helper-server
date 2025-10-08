@@ -9,6 +9,7 @@ const cookieExtractor = (req) => {
     let token = null;
     if (req?.cookies) {
         token = req.cookies['access_token'];
+        console.log("BBBBB",token);
     }
     return token;
 };
