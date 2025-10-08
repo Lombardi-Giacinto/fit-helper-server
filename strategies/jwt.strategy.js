@@ -1,15 +1,13 @@
 import passport from 'passport';
-import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
+import { Strategy as JwtStrategy} from 'passport-jwt';
 import User from '../models/user.model.js';
 
 const jwtSecret = process.env.JWT_SECRET;
 
 const cookieExtractor = (req) => {
+    console.log("Cookies ricevuti:", req.cookies);
     let token = null;
-    if (req?.cookies) {
-        token = req.cookies['access_token'];
-        console.log("BBBBB",token);
-    }
+    if (req?.cookies) token = req.cookies['access_token'];
     return token;
 };
 

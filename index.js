@@ -9,30 +9,31 @@ import passport from 'passport';
 const uri = process.env.MONGODB_URI;
 const port = process.env.PORT;
 
+const app = express();
 
 //CORS
 const allowedOrigins = [
   "https://main.dr3pvtmhloycm.amplifyapp.com",
   "http://localhost:5173"
 ];
+
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) {
-      // richieste dirette dal server (curl, postman)
-      callback(null, true);
+      callback(null, true); // richieste da tools come Postman
     } else if (allowedOrigins.includes(origin)) {
-      callback(null, origin); // Pass the specific origin back
+      callback(null, true); // il pacchetto cors restituirà l’origin corretto
     } else {
       callback(new Error("CORS not allowed"));
     }
   },
-  credentials: true,
+  credentials: true, // permette cookie cross-site
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"] // header consentiti
 };
 
-const app = express();
 app.use(cors(corsOptions));
+
 
 //middleware
 app.use(express.json());
@@ -42,7 +43,7 @@ app.use(passport.initialize());
 
 //routes
 app.get('/', (req, res) => {
-  res.json('Home3');
+  res.json('Home5');
 });
 app.use('/api', router);
 
