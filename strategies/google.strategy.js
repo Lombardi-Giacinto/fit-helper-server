@@ -15,12 +15,14 @@ passport.use(
         // Cerca o crea l'utente
         let user = await User.findOne({ googleId: profile.id });
 
+        console.log(profile);
+
         if (!user) {
           user = await User.create({
             googleId: profile.id,
             email: profile.emails[0].value,
-            name: profile.name.givenName,
-            surname: profile.name.family_name
+            name: profile.name?.givenName || profile.displayName, // Fallback to displayName
+            surname: profile.name?.familyName || '' // Fallback to an empty string if not present
           });
         }
 

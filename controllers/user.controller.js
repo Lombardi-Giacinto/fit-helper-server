@@ -3,8 +3,29 @@ import jwt from 'jsonwebtoken';
 
 const jwtSecret = process.env.JWT_SECRET;
 
-const createUser = (req, res) => {
-    User.create({
+const sendTokenCookie = (user, statusCode, res) => {
+    const token = jwt.sign({ sub: user._id, email: user.email }, jwtSecret, { expiresIn: '1h' });
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Usa cookie sicuri in produzione
+        sameSite: 'None',
+        maxAge: 60 * 60 * 1000 // 1 ora, come la scadenza del token
+    };
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.cookie('access_token', token, cookieOptions);
+
+    res.status(statusCode).json({
+        user: userResponse,
+    });
+};
+
+const createUser = async (req, res) => {
+    try {
+        const user = await User.create({
         name: req.body.name,
         surname: req.body.surname,
         email: req.body.email,
@@ -14,33 +35,16 @@ const createUser = (req, res) => {
         activity: req.body.activity,
         height: req.body.height,
         weight: req.body.weight
-    })
-        .then(user => {
-            const token = jwt.sign({
-                sub: user._id,
-                email: user.email,
-            },
-                jwtSecret, { expiresIn: '1h' });
-
-            const userResponse = user.toObject();
-            delete userResponse.password;
-            res.status(201).json({ user: userResponse, token: `Bearer ${token}` });
-        })
-        .catch(error =>
-            res.status(400).json({ error: error.message })
-        )
+    });
+        sendTokenCookie(user, 201, res);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 };
 
 const loginUser = (req, res) => {
-    const token = jwt.sign({
-        sub: req.user._id,
-        email: req.user.email,
-    },
-        jwtSecret, { expiresIn: '1h' });
-
-    const userResponse = req.user.toObject();
-    delete userResponse.password;
-    res.status(200).json({ user: userResponse, token: `Bearer ${token}` });
+    // L'oggetto utente è già in req.user grazie alla strategia 'local' di passport
+    sendTokenCookie(req.user, 200, res);
 };
 
 const updateUser = (req, res) => {
@@ -89,7 +93,7 @@ const loginGoogle = (req, res) => {
             httpOnly: true,
             secure: true,
             sameSite: 'None',
-            maxAge: 60 * 60 * 1000 // 1h
+            maxAge: 60 * 1000 // 1 minute
         });
 
         res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/status=success`);

@@ -3,6 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import mongoose from 'mongoose';
 import router from './routes/api.route.js';
+import cookieParser from 'cookie-parser';
 import passport from 'passport';
 
 const uri = process.env.MONGODB_URI;
@@ -26,6 +27,7 @@ const corsOptions = {
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ["Content-Type", "Authorization"]
 };
 
@@ -34,6 +36,7 @@ app.use(cors(corsOptions));
 
 //middleware
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 app.use(passport.initialize());
 
