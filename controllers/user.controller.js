@@ -10,8 +10,7 @@ const setAuthCookie = (res, user) => {
         httpOnly: true,
         secure: true,
         sameSite: 'None',
-        domain: 'fithelper.duckdns.org',
-        path: '/',
+        path: '/', 
         maxAge: 60 * 60 * 1000 // 1 h
     };
 
