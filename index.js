@@ -19,11 +19,13 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) {
-      callback(null, true); // richieste da tools come Postman
-    } else if (allowedOrigins.includes(origin)) {
-      callback(null, true); // il pacchetto cors restituirà l’origin corretto
+    // Permetti richieste senza 'origin' (es. Postman, test server-side)
+    // o se l'origine è nella whitelist.
+    if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+      callback(null, true);
     } else {
+      // Log dell'origine non permessa per facilitare il debug
+      console.error(`CORS Error: Origin ${origin} not allowed.`);
       callback(new Error("CORS not allowed"));
     }
   },
