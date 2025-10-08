@@ -19,6 +19,7 @@ const options = {
 
 export default passport.use(new JwtStrategy(options, async (jwt_payload, done) => {
     try {
+        console.log('[DEBUG] Payload JWT ricevuto:', jwt_payload);
         const user = await User.findById(jwt_payload.sub);
 
         if (user) return done(null, user);

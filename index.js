@@ -19,9 +19,9 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Permetti richieste senza 'origin' (es. Postman, test server-side)
-    // o se l'origine è nella whitelist.
-    if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    // and requests from the whitelisted origins.
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       // Log dell'origine non permessa per facilitare il debug
