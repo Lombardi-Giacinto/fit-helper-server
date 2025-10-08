@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 
 const jwtSecret = process.env.JWT_SECRET;
 
-const sendTokenCookie = (user, statusCode, res) => {
+const setAuthCookie = (res, user) => {
     const token = jwt.sign({ sub: user._id, email: user.email }, jwtSecret, { expiresIn: '1h' });
 
     const cookieOptions = {
@@ -13,12 +13,6 @@ const sendTokenCookie = (user, statusCode, res) => {
         maxAge: 60 * 60 * 1000 // 1 h
     };
     res.cookie('access_token', token, cookieOptions);
-
-    const userResponse = user.toObject();
-    delete userResponse.password;
-    res.status(statusCode).json({
-        user: userResponse,
-    });
 };
 
 const createUser = async (req, res) => {
@@ -34,14 +28,21 @@ const createUser = async (req, res) => {
             height: req.body.height,
             weight: req.body.weight
         });
-        sendTokenCookie(user, 201, res);
+
+        setAuthCookie(res, user);
+        const userResponse = user.toObject();
+        delete userResponse.password;
+        res.status(201).json({ user: userResponse });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
 
 const loginUser = (req, res) => {
-    sendTokenCookie(req.user, 200, res);
+    setAuthCookie(res, req.user);
+    const userResponse = req.user.toObject();
+    delete userResponse.password;
+    res.status(200).json({ user: userResponse });
 };
 
 const updateUser = (req, res) => {
@@ -83,15 +84,7 @@ const checkEmail = (req, res) => {
 
 const loginGoogle = (req, res) => {
     try {
-        const token = jwt.sign({ sub: req.user._id, email: req.user.email }, jwtSecret, { expiresIn: '1h' });
-        const cookieOptions = {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'None',
-            maxAge: 60 * 60 * 1000 // 1 ora
-        };
-        res.cookie('access_token', token, cookieOptions);
-        console.log("AAAAA", token);
+        setAuthCookie(res, req.user);
         res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/status=success`);
     } catch (error) {
         console.error('Error during Google login process:', error);
