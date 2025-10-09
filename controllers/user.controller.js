@@ -28,6 +28,7 @@ const clearUserData = (temp) => {
     delete userResponse.createdAt;
     delete userResponse.updatedAt;
     delete userResponse.__v;
+    return userResponse;
 }
 
 
@@ -55,7 +56,7 @@ const createUser = async (req, res) => {
 
 const loginUser = (req, res) => {
     setAuthCookie(res, req.user);
-    clearUserData(req.user);
+    const userResponse = clearUserData(req.user);
     res.status(200).json({ user: userResponse });
 };
 
@@ -108,7 +109,7 @@ const loginGoogle = (req, res) => {
 }
 
 const getMe = (req, res) => {
-    clearUserData(req.user);
+    const userResponse = clearUserData(req.user);
     res.status(200).json(userResponse);
 };
 
