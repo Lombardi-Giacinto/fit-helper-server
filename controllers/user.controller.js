@@ -10,7 +10,7 @@ const setAuthCookie = (res, user) => {
         httpOnly: true,
         secure: true,
         sameSite: 'None',
-        path: '/', 
+        path: '/',
         maxAge: 60 * 60 * 1000 // 1 h
     };
 
@@ -20,6 +20,16 @@ const setAuthCookie = (res, user) => {
     console.log('[DEBUG] Impostazione cookie nel controller:', cookieString);
     res.setHeader('Set-Cookie', cookieString);
 };
+
+const clearUserData = (temp) => {
+    const userResponse = temp.toObject();
+    delete userResponse.password;
+    delete userResponse.googleId;
+    delete userResponse.createdAt;
+    delete userResponse.updatedAt;
+    delete userResponse.__v;
+}
+
 
 const createUser = async (req, res) => {
     try {
@@ -35,9 +45,8 @@ const createUser = async (req, res) => {
             weight: req.body.weight
         });
 
-        setAuthCookie(res, user);
-        const userResponse = user.toObject();
-        delete userResponse.password;
+        setAuthCookie(res, user); // Usa l'utente appena creato
+        clearUserData(user);
         res.status(201).json({ user: userResponse });
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -46,8 +55,7 @@ const createUser = async (req, res) => {
 
 const loginUser = (req, res) => {
     setAuthCookie(res, req.user);
-    const userResponse = req.user.toObject();
-    delete userResponse.password;
+    clearUserData(req.user);
     res.status(200).json({ user: userResponse });
 };
 
@@ -100,8 +108,7 @@ const loginGoogle = (req, res) => {
 }
 
 const getMe = (req, res) => {
-    const userResponse = req.user.toObject();
-    delete userResponse.password;
+    clearUserData(req.user);
     res.status(200).json(userResponse);
 };
 

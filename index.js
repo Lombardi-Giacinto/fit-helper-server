@@ -19,19 +19,18 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    // and requests from the whitelisted origins.
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin)
       callback(null, true);
-    } else {
-      // Log dell'origine non permessa per facilitare il debug
+    else if (allowedOrigins.includes(origin)) 
+      callback(null, origin); 
+    else {
       console.error(`CORS Error: Origin ${origin} not allowed.`);
       callback(new Error("CORS not allowed"));
     }
   },
-  credentials: true, // permette cookie cross-site
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ["Content-Type", "Authorization"] // header consentiti
+  allowedHeaders: ["Content-Type", "Authorization"]
 };
 
 app.use(cors(corsOptions));
@@ -53,7 +52,7 @@ app.use((req, res, next) => {
 
 //routes
 app.get('/', (req, res) => {
-  res.json('Home5');
+  res.json('Home Test');
 });
 app.use('/api', router);
 
