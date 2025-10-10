@@ -9,10 +9,9 @@ import passport from 'passport';
 import mongoSanitize from 'express-mongo-sanitize';
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import hpp from "hpp";
-import xss from "xss-clean";
-import compression from "compression";
-import morgan from "morgan";
+import hpp from 'hpp';
+import compression from 'compression';
+import morgan from 'morgan';
 
 const uri = process.env.MONGODB_URI;
 const port = process.env.PORT;
@@ -24,20 +23,12 @@ const allowedOrigins = [
   "https://main.dr3pvtmhloycm.amplifyapp.com",
   "http://localhost:5173"
 ];
+
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin)
-      callback(null, true);
-    else if (allowedOrigins.includes(origin)) 
-      callback(null, origin); 
-    else {
-      console.error(`CORS Error: Origin ${origin} not allowed.`);
-      callback(new Error("CORS not allowed"));
-    }
-  },
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
 
@@ -48,6 +39,10 @@ mongoose.set('strictQuery', true);
 mongoose.set('strictPopulate', true);
 
 app.use(mongoSanitize());
+
+// Previene l'inquinamento dei parametri HTTP
+app.use(hpp());
+
 app.use(helmet());
 
 // Rate Limiting: Limita le richieste da uno stesso IP
@@ -72,6 +67,10 @@ app.use((req, res, next) => {
 
 
 //other middleware
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+app.use(compression());
 app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
