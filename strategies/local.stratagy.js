@@ -10,12 +10,12 @@ export default passport.use(new Strategy({
         try {
             const user = await User.findOne({ email: username });
             if (!user) {
-                return done(null, false, { message: "Incorrect email or password." });
+                return done(null, false, { message: "incorrect_credentials" });
             }
 
             const isMatch = await user.comparePassword(password);
             if (!isMatch) {
-                return done(null, false, { message: "Incorrect email or password." });
+                return done(null, false, { message: "incorrect_credentials" });
             }
 
             return done(null, user);

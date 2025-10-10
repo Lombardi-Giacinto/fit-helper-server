@@ -6,6 +6,14 @@ import router from './routes/api.route.js';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
 
+import mongoSanitize from 'express-mongo-sanitize';
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import hpp from "hpp";
+import xss from "xss-clean";
+import compression from "compression";
+import morgan from "morgan";
+
 const uri = process.env.MONGODB_URI;
 const port = process.env.PORT;
 
@@ -16,7 +24,6 @@ const allowedOrigins = [
   "https://main.dr3pvtmhloycm.amplifyapp.com",
   "http://localhost:5173"
 ];
-
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin)
@@ -32,17 +39,46 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ["Content-Type", "Authorization"]
 };
-
 app.use(cors(corsOptions));
 
 
-//middleware
-app.use(express.json());
+//security
+mongoose.set('sanitizeFilter', true);
+mongoose.set('strictQuery', true);
+mongoose.set('strictPopulate', true);
+
+app.use(mongoSanitize());
+app.use(helmet());
+
+// Rate Limiting: Limita le richieste da uno stesso IP
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true, 
+  legacyHeaders: false, // Disable  X-RateLimit-*
+});
+app.use(limiter);
+
+// host + upgrade filter
+const ALLOWED_HOSTS = new Set(['fithelper.duckdns.org', 'your-domain.com']);
+app.use((req, res, next) => {
+  const host = (req.headers.host || '').split(':')[0];
+  const conn = (req.headers['connection'] || '').toLowerCase();
+
+  if (!host || !ALLOWED_HOSTS.has(host)) return res.status(400).end();
+  if (conn === 'upgrade') return res.status(426).end(); // oppure next() se gestisci ws
+  next();
+});
+
+
+//other middleware
+app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 app.use(passport.initialize());
 
-// Middleware di debug per i cookie
+
+//cookie debug middleware
 app.use((req, res, next) => {
   console.log(`[DEBUG] Richiesta in arrivo: ${req.method} ${req.originalUrl}`);
   console.log('[DEBUG] Headers della richiesta:', req.headers);
