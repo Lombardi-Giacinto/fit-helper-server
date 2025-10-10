@@ -47,8 +47,7 @@ const createUser = async (req, res) => {
         });
 
         setAuthCookie(res, user); // Usa l'utente appena creato
-        clearUserData(user);
-        res.status(201).json({ user: userResponse });
+        res.status(201).json({ user: clearUserData(user) });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -56,8 +55,7 @@ const createUser = async (req, res) => {
 
 const loginUser = (req, res) => {
     setAuthCookie(res, req.user);
-    const userResponse = clearUserData(req.user);
-    res.status(200).json({ user: userResponse });
+    res.status(200).json({ user: clearUserData(req.user) });
 };
 
 const updateUser = (req, res) => {
@@ -109,8 +107,7 @@ const loginGoogle = (req, res) => {
 }
 
 const getMe = (req, res) => {
-    const userResponse = clearUserData(req.user);
-    res.status(200).json(userResponse);
+    res.status(200).json(clearUserData(req.user));
 };
 
 export default {

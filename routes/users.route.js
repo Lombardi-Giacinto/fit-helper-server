@@ -14,7 +14,20 @@ router.get('/', (req, res) => {
 router.post('/register', UserController.createUser);
 router.get("/checkEmail/:email", UserController.checkEmail);
 
-router.post('/login', passport.authenticate('local', { session: false }), UserController.loginUser);
+router.post('/login', (req, res, next) => {
+  passport.authenticate('local', { session: false }, (err, user, info) => {
+    if (err) {
+      return next(err); // Server error
+    }
+    if (!user) {
+      // Failed authentication
+      return res.status(401).json({ message: info.message });
+    }
+    req.user = user;
+    next();
+  })(req, res, next);
+}, UserController.loginUser);
+
 
 // Rotta per iniziare l'autenticazione Google e creazione JWT
 router.get('/loginGoogle/start', passport.authenticate('google', { scope: ['profile', 'email'] }));

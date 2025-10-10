@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: function() { return !this.googleId; } },
     googleId: { type: String, unique: true, sparse: true },
     birthdate: { type: Date },
-    male: { type: Boolean },//false == female
+    male: { type: String, enum:['male', 'female', 'other'] },
     activity: { type: String, enum: ['sedentary', 'lightlyActive','veryActive'], default: 'sedentary' },
     height: { type: Number, default:0},//cm
     weight: { type: Number, default:0},//Kg
