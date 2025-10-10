@@ -41,7 +41,7 @@ mongoose.set('strictPopulate', true);
 app.use(mongoSanitize());
 
 // Previene l'inquinamento dei parametri HTTP
-app.use(hpp());
+app.use(hpp()); 
 
 app.use(helmet());
 
@@ -53,18 +53,6 @@ const limiter = rateLimit({
   legacyHeaders: false, // Disable  X-RateLimit-*
 });
 app.use(limiter);
-
-// host + upgrade filter
-const ALLOWED_HOSTS = new Set(['fithelper.duckdns.org', 'your-domain.com']);
-app.use((req, res, next) => {
-  const host = (req.headers.host || '').split(':')[0];
-  const conn = (req.headers['connection'] || '').toLowerCase();
-
-  if (!host || !ALLOWED_HOSTS.has(host)) return res.status(400).end();
-  if (conn === 'upgrade') return res.status(426).end(); // oppure next() se gestisci ws
-  next();
-});
-
 
 //other middleware
 if (process.env.NODE_ENV === 'development') {
@@ -90,6 +78,19 @@ app.get('/', (req, res) => {
   res.json('Home Test');
 });
 app.use('/api', router);
+
+// host + upgrade filter
+
+const ALLOWED_HOSTS = new Set(['fithelper.duckdns.org', 'localhost']);
+app.use((req, res, next) => {
+  const host = (req.headers.host || '').split(':')[0];
+  const conn = (req.headers['connection'] || '').toLowerCase();
+
+  if (!host || !ALLOWED_HOSTS.has(host)) return res.status(400).end();
+  if (conn === 'upgrade') return res.status(426).end(); // oppure next() se gestisci ws
+  next();
+});
+
 
 // Catch-all for 404 Not Found
 app.use((req, res, next) => {
