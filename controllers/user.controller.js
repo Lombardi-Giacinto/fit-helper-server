@@ -17,7 +17,8 @@ const setAuthCookie = (res, user) => {
     // Usiamo res.setHeader per un controllo più esplicito e per evitare header multipli.
     const cookieString = cookie.serialize('access_token', token, cookieOptions);
 
-    console.log('[DEBUG] Impostazione cookie nel controller:', cookieString);
+    if (process.env.NODE_ENV === 'development')
+        console.log('[DEBUG] Impostazione cookie nel controller:', cookieString);
     res.setHeader('Set-Cookie', cookieString);
 };
 
@@ -46,7 +47,7 @@ const createUser = async (req, res) => {
             weight: req.body.weight
         });
 
-        setAuthCookie(res, user); // Usa l'utente appena creato
+        setAuthCookie(res, user);
         res.status(201).json({ user: clearUserData(user) });
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -58,19 +59,20 @@ const loginUser = (req, res) => {
     res.status(200).json({ user: clearUserData(req.user) });
 };
 
-const updateUser = (req, res) => {
-    User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
-        .then(user => {
-            if (user) {
-                res.status(200).json(user);
-            } else {
-                res.status(404).json({ error: 'User not found' });
-            }
-        })
-        .catch(error => {
-            res.status(500).json({ error: error.message });
-        });
-};
+const updateUser = async (req, res) => {
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+        if (user)
+            res.status(200).json(user);
+        res.status(404).json({ error: 'User not found' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
 
 const deleteUser = (req, res) => {
     User.findByIdAndDelete(req.params.id)

@@ -38,7 +38,7 @@ router.get('/loginGoogle', passport.authenticate('google', { session: false }), 
 // Protected routes that require jwt
 router.put('/:id', passport.authenticate('jwt', { session: false }), UserController.updateUser)
 router.delete('/:id', passport.authenticate('jwt', { session: false }), UserController.deleteUser);
-// Rotta per ottenere i dati dell'utente loggato
+// Rotta per ottenere i dati dell'utente google
 router.get('/me', passport.authenticate('jwt', { session: false }), UserController.getMe);
 
 export default router;

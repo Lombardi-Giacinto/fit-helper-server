@@ -1,22 +1,26 @@
-import Food from "../models/food.model";
+import Food from '../models/food.model.js';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+const s3 = new S3Client({ region: 'eu-west-1' });
 
 const createFood = async (req, res) => {
     try {
         const food = await Food.create({
             name: req.body.name,
             calories: req.body.calories,
-            proteins: req.body.proteins,
-            carbohydrates: req.body.carbohydrates,
-            fats: req.body.fats,
+            protein: req.body.protein,
+            carbs: req.body.carbs,
+            fat: req.body.fat,
             category: req.body.category
         });
         res.status(201).json(food);
     } catch (error) {
-        res.status(500).status({ error: error.message });
+        res.status(500).json({ error: error.message });
     }
 }
 
-const getAllFood = async (req, res) => {
+const getAllFoods = async (req, res) => {
     try {
         const foods = await Food.find();
         res.status(200).json(foods);
@@ -28,11 +32,10 @@ const getAllFood = async (req, res) => {
 const getFoodByCategory = async (req, res) => {
     try {
         const foods = await Food.find({ category: req.params.category });
-        if (foods?.length > 0) {
-            res.status(200).json(foods);
-        } else {
-            res.status(404).json({ error: "No food found for this category" });
-        }
+        if (foods?.length > 0)
+            return res.status(200).json(foods);
+
+        res.status(404).json({ error: "No food found for this category" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -41,10 +44,22 @@ const getFoodByCategory = async (req, res) => {
 const getFood = async (req, res) => {
     try {
         const food = await Food.findOne({ name: req.params.name });
-        if (food)
-            return res.status(200).json(food);
-        res.status(404).json({ error: "No food found" });
+        if (!food)
+            return res.status(404).json({ error: "Food not found" });
+
+        const signedUrl = await getSignedUrl(
+            s3,
+            new GetObjectCommand({
+                Bucket: 'fithelper-images',
+                Key: `foods/${food.name.toLowerCase()}.png`,
+            }),
+            { expiresIn: 60 * 5 } // 5 minuti
+        );
+
+        res.status(200).json({ food, imageUrl: signedUrl });
+
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 }
@@ -52,10 +67,12 @@ const getFood = async (req, res) => {
 const updateFood = async (req, res) => {
     try {
         const food = await Food.findOneAndUpdate({ name: req.params.name }, req.body, { new: true });
-        if (food)
-            return res.status(200).json(food);
-        res.status(404).json({ error: "No food found" });
+        if (!food)
+            return res.status(404).json({ error: "Food not found" });
+
+        res.status(200).json({ imageUrl: signedUrl });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 }
@@ -73,8 +90,10 @@ const deleteFood = async (req, res) => {
 
 
 export default {
+    getFood,
     createFood,
-    getAllFood,
+    getAllFoods,
     getFoodByCategory,
-    getFood
+    updateFood,
+    deleteFood
 };

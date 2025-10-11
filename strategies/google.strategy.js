@@ -15,6 +15,7 @@ passport.use(
         // Cerca o crea l'utente
         let user = await User.findOne({ googleId: profile.id });
 
+        //test da rimuovere in prod
         console.log(profile);
 
         if (!user) {
