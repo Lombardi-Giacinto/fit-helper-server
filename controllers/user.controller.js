@@ -86,14 +86,20 @@ const deleteUser = (req, res) => {
         });
 };
 
-const checkEmail = (req, res) => {
-    User.findOne({ email: req.params.email })
-        .then(user => res.json({ exists: !!user }))
-        .catch(error => {
-            console.error(error);
-            res.status(500).json({ message: error.message });
-        });
+const checkEmail = async (req, res) => {
+    try {
+        const user = await User.findOne({ email: req.params.email });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ exists: true});
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
+
 
 const loginGoogle = (req, res) => {
     try {
