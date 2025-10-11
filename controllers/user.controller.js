@@ -2,10 +2,8 @@ import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 import cookie from 'cookie';
 
-const jwtSecret = process.env.JWT_SECRET;
-
 const setAuthCookie = (res, user) => {
-    const token = jwt.sign({ sub: user._id, email: user.email }, jwtSecret, { expiresIn: '1h' });
+    const token = jwt.sign({ sub: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const cookieOptions = {
         httpOnly: true,
         secure: true,
@@ -41,7 +39,7 @@ const createUser = async (req, res) => {
             email: req.body.email,
             password: req.body.password,
             birthdate: req.body.birthdate,
-            male: req.body.male,
+            gender: req.body.gender,
             activity: req.body.activity,
             height: req.body.height,
             weight: req.body.weight

@@ -2,7 +2,7 @@ import Food from '../models/food.model.js';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-const s3 = new S3Client({ region: 'eu-west-1' });
+const s3 = new S3Client({ region: 'eu-central-1' });
 
 const createFood = async (req, res) => {
     try {
@@ -51,7 +51,7 @@ const getFood = async (req, res) => {
             s3,
             new GetObjectCommand({
                 Bucket: 'fithelper-images',
-                Key: `foods/${food.name.toLowerCase()}.png`,
+                Key: `foods/${food.name.toLowerCase()}.webp`,
             }),
             { expiresIn: 60 * 5 } // 5 minuti
         );

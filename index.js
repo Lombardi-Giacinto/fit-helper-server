@@ -1,4 +1,4 @@
-import cors from 'cors';
+  import cors from 'cors';
 import { corsOptions } from './src/cors.js';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -11,10 +11,6 @@ import rateLimit from "express-rate-limit";
 import hpp from 'hpp';
 import compression from 'compression';
 import morgan from 'morgan';
-
-
-const uri = process.env.MONGODB_URI;
-const port = process.env.PORT;
 
 const app = express();
 
@@ -69,11 +65,11 @@ app.use((err, req, res, next) => {
 });
 
 // Connection to MongoDB and server start
-mongoose.connect(uri)
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connesso a MongoDB');
-    app.listen(port, () => {
-      console.log(`Server in ascolto su http://localhost:${port}`);
+    app.listen(process.env.PORT, () => {
+      console.log(`Server in ascolto su http://localhost:${process.env.PORT}`);
     });
   })
   .catch(err => {

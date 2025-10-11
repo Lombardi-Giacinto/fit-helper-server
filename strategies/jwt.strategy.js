@@ -2,8 +2,6 @@ import passport from 'passport';
 import { Strategy as JwtStrategy } from 'passport-jwt';
 import User from '../models/user.model.js';
 
-const jwtSecret = process.env.JWT_SECRET;
-
 const cookieExtractor = (req) => {
     if (process.env.NODE_ENV === 'development') {
         console.log("[DEBUG] Entrato nella funzione cookieExtractor.");
@@ -18,7 +16,7 @@ const cookieExtractor = (req) => {
 
 const options = {
     jwtFromRequest: cookieExtractor,
-    secretOrKey: jwtSecret,
+    secretOrKey: process.env.JWT_SECRET,
 };
 
 export default passport.use(new JwtStrategy(options, async (jwt_payload, done) => {
