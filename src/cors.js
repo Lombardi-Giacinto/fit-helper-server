@@ -5,17 +5,20 @@ const ALLOWED_ORIGINS = [
 ];
 
 export const corsOptions = {
-  origin: ALLOWED_ORIGINS,
+  origin: function (origin, callback) {
+    // Consenti richieste senza "origin" (Postman, cURL, server-to-server)
+    if (!origin) return callback(null, true);
+
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: ${origin} non è consentito.`));
+    }
+  },
+  credentials: true,// permette cookie, token o header Authorization
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Accept',
-  ],
-  exposedHeaders: ['Authorization'], // se il server restituisce token JWT
-  credentials: true, // permette cookie, token o header Authorization
-  maxAge: 600, // caching delle preflight OPTIONS per 10 minuti
-  preflightContinue: false, // Express gestisce la risposta automaticamente
-  optionsSuccessStatus: 204, // evita problemi con vecchi browser
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Authorization'],// se il server restituisce token JWT
+  optionsSuccessStatus: 204,// evita problemi con vecchi browser
+  maxAge: 600,// caching delle preflight OPTIONS per 10 minuti
 };

@@ -6,18 +6,16 @@ const setAuthCookie = (res, user) => {
     const token = jwt.sign({ sub: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV !== 'development',
+        secure: true,
         sameSite: 'None',
         path: '/',
         maxAge: 60 * 60 * 1000, // 1 h
         Partitioned: true
     };
 
-    const cookieString = cookie.serialize('access_token', token, cookieOptions);
-
-    if (process.env.NODE_ENV === 'development')
-        console.log('[DEBUG] Impostazione cookie nel controller:', cookieString);
-    res.setHeader('Set-Cookie', cookieString);
+    res.setHeader('Set-Cookie', [
+        `access_token=${token}; Path=/; Secure; HttpOnly; SameSite=None; Partitioned; Max-Age=604800`
+    ]);
 };
 
 const clearUserData = (mongooseDoc) => {
@@ -57,7 +55,7 @@ const loginUser = (req, res) => {
 const logutUser = (req, res) => {
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV !== 'development',
+        secure: true,
         sameSite: 'None',
         path: '/',
     };
@@ -90,7 +88,7 @@ const deleteUser = async (req, res) => {
 
         const cookieOptions = {
             httpOnly: true,
-            secure: process.env.NODE_ENV !== 'development',
+            secure: true,
             sameSite: 'None',
             path: '/',
         };
