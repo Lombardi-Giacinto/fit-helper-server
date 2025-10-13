@@ -4,14 +4,11 @@ import User from '../models/user.model.js';
 
 const cookieExtractor = (req) => {
     if (process.env.NODE_ENV === 'development') {
-        console.log("[DEBUG] Entrato nella funzione cookieExtractor.");
         console.log("[DEBUG] Esecuzione di cookieExtractor nella strategia JWT.");
         console.log("[DEBUG] Headers completi nella strategia:", req.headers);
     }
 
-    let token = null;
-    if (req?.cookies) token = req.cookies['access_token'];
-    return token;
+    return req.cookies?.access_token || null
 };
 
 const options = {

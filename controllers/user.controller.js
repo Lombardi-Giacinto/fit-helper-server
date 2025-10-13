@@ -15,7 +15,7 @@ const setAuthCookie = (res, user) => {
 };
 
 const clearUserData = (mongooseDoc) => {
-    // rest operator contain all other field
+    // The rest operator contains all other fields
     const { password, googleId, createdAt, updatedAt, __v, ...userResponse } = mongooseDoc.toObject();
     return userResponse;
 }
@@ -109,7 +109,7 @@ const checkEmail = async (req, res) => {
 const loginGoogle = (req, res) => {
     try {
         setAuthCookie(res, req.user);
-        // redirect richiesto dal flusso OAuth2
+        // Redirect required by the OAuth2 flow
         res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/status=success`);
     } catch (error) {
         console.error('Error during Google login process:', error);
