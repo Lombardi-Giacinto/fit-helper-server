@@ -27,6 +27,8 @@ router.post('/login', (req, res, next) => {
     next();
   })(req, res, next);
 }, UserController.loginUser);
+router.get('/logout', UserController.logutUser);
+
 
 
 // Rotta per iniziare l'autenticazione Google e creazione JWT
@@ -35,9 +37,9 @@ router.get('/loginGoogle/start', passport.authenticate('google', { scope: ['prof
 router.get('/loginGoogle', passport.authenticate('google', { session: false }), UserController.loginGoogle);
 
 
-// Protected routes that require jwt
-router.put('/:id', passport.authenticate('jwt', { session: false }), UserController.updateUser)
-router.delete('/:id', passport.authenticate('jwt', { session: false }), UserController.deleteUser);
+//* Protected routes that require jwt
+router.put('/update', passport.authenticate('jwt', { session: false }), UserController.updateUser)
+router.delete('/delete', passport.authenticate('jwt', { session: false }), UserController.deleteUser);
 // Rotta per ottenere i dati dell'utente google
 router.get('/me', passport.authenticate('jwt', { session: false }), UserController.getMe);
 

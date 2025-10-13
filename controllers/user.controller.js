@@ -57,44 +57,65 @@ const loginUser = (req, res) => {
     res.status(200).json({ user: clearUserData(req.user) });
 };
 
+const logutUser = (req, res) => {
+    res.clearCookie('access_token',{
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None',
+            path: '/',
+            maxAge: 60 * 60 * 1000 // 1 h
+        });
+    res.status(200).json({ message: 'User logged out successfully' });
+}
+
 const updateUser = async (req, res) => {
     try {
-        const user = await User.findByIdAndUpdate(
-            req.params.id,
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user._id,
             req.body,
             { new: true, runValidators: true }
         );
-        if (user)
-            res.status(200).json(user);
-        res.status(404).json({ error: 'User not found' });
+        if (!updatedUser)
+            return res.status(404).json({ error: 'User not found' });
+
+        //setAuthCookie(res, updatedUser);
+        res.status(200).json(updatedUser);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 }
 
-const deleteUser = (req, res) => {
-    User.findByIdAndDelete(req.params.id)
-        .then(user => {
-            if (user) {
-                res.status(200).json({ message: 'User deleted successfully' });
-            } else {
-                res.status(404).json({ error: 'User not found' });
-            }
-        })
-        .catch(error => {
-            res.status(500).json({ error: error.message });
+const deleteUser = async (req, res) => {
+    try {
+        const deletedUser = await User.findByIdAndDelete(req.user._id,)
+
+        if (!deletedUser)
+            return res.status(404).json({ error: 'User not found' });
+
+        res.clearCookie('access_token',{
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None',
+            path: '/',
+            maxAge: 60 * 60 * 1000 // 1 h
         });
+
+        let token = null;
+        if (req?.cookies) token = req.cookies['access_token'];
+
+        res.status(200).json({ message: 'User deleted successfully',token });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
 
 const checkEmail = async (req, res) => {
     try {
         const user = await User.findOne({ email: req.params.email });
 
-        if (!user) {
+        if (!user)
             return res.status(404).json({ message: "User not found" });
-        }
-
-        res.status(200).json({ exists: true});
+        res.status(200).json({ exists: true });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -119,6 +140,7 @@ const getMe = (req, res) => {
 export default {
     createUser,
     loginUser,
+    logutUser,
     updateUser,
     deleteUser,
     checkEmail,
