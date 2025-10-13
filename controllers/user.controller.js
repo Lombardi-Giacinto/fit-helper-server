@@ -1,6 +1,5 @@
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
-import cookie from 'cookie';
 
 const setAuthCookie = (res, user) => {
     const token = jwt.sign({ sub: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -12,21 +11,12 @@ const setAuthCookie = (res, user) => {
         maxAge: 60 * 60 * 1000 // 1 h
     };
 
-    // Usiamo res.setHeader per un controllo più esplicito e per evitare header multipli.
-    const cookieString = cookie.serialize('access_token', token, cookieOptions);
-
-    if (process.env.NODE_ENV === 'development')
-        console.log('[DEBUG] Impostazione cookie nel controller:', cookieString);
-    res.setHeader('Set-Cookie', cookieString);
+    res.cookie('access_token', token, cookieOptions);
 };
 
-const clearUserData = (temp) => {
-    const userResponse = temp.toObject();
-    delete userResponse.password;
-    delete userResponse.googleId;
-    delete userResponse.createdAt;
-    delete userResponse.updatedAt;
-    delete userResponse.__v;
+const clearUserData = (mongooseDoc) => {
+    // rest operator contain all other field
+    const { password, googleId, createdAt, updatedAt, __v, ...userResponse } = mongooseDoc.toObject();
     return userResponse;
 }
 
@@ -58,14 +48,14 @@ const loginUser = (req, res) => {
 };
 
 const logutUser = (req, res) => {
-    res.clearCookie('access_token',{
-            httpOnly: true,
-            secure: true,
-            sameSite: 'None',
-            path: '/',
-            maxAge: 60 * 60 * 1000 // 1 h
-        });
-    res.status(200).json({ message: 'User logged out successfully' });
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None',
+        path: '/',
+    };
+    res.clearCookie('access_token', cookieOptions);
+    res.status(200).json({ message: 'User logged out successfully'});
 }
 
 const updateUser = async (req, res) => {
@@ -92,18 +82,15 @@ const deleteUser = async (req, res) => {
         if (!deletedUser)
             return res.status(404).json({ error: 'User not found' });
 
-        res.clearCookie('access_token',{
+        const cookieOptions = {
             httpOnly: true,
             secure: true,
             sameSite: 'None',
             path: '/',
-            maxAge: 60 * 60 * 1000 // 1 h
-        });
+        };
+        res.clearCookie('access_token', cookieOptions);
 
-        let token = null;
-        if (req?.cookies) token = req.cookies['access_token'];
-
-        res.status(200).json({ message: 'User deleted successfully',token });
+        res.status(200).json({ message: 'User deleted successfully', token });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -112,10 +99,7 @@ const deleteUser = async (req, res) => {
 const checkEmail = async (req, res) => {
     try {
         const user = await User.findOne({ email: req.params.email });
-
-        if (!user)
-            return res.status(404).json({ message: "User not found" });
-        res.status(200).json({ exists: true });
+        res.status(200).json({ exists: !!user });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
