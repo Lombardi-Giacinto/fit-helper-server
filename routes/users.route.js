@@ -17,7 +17,7 @@ router.post('/login', (req, res, next) => {
     }
     if (!user) {
       // Failed authentication
-      return res.status(401).json({ message: info.message });
+      return res.status(401).json(info);
     }
     req.user = user;
     next();

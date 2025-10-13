@@ -9,11 +9,15 @@ const setAuthCookie = (res, user) => {
         secure: process.env.NODE_ENV !== 'development',
         sameSite: 'None',
         path: '/',
-        maxAge: 60 * 60 * 1000 // 1 h
+        maxAge: 60 * 60 * 1000, // 1 h
+        Partitioned: true
     };
 
-    // Set the cookie
-    res.cookie('access_token', token, cookieOptions);
+    const cookieString = cookie.serialize('access_token', token, cookieOptions);
+
+    if (process.env.NODE_ENV === 'development')
+        console.log('[DEBUG] Impostazione cookie nel controller:', cookieString);
+    res.setHeader('Set-Cookie', cookieString);
 };
 
 const clearUserData = (mongooseDoc) => {
@@ -26,8 +30,8 @@ const clearUserData = (mongooseDoc) => {
 const createUser = async (req, res) => {
     try {
         const user = await User.create({
-            name: req.body.name,
-            surname: req.body.surname,
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
             email: req.body.email,
             password: req.body.password,
             birthdate: req.body.birthdate,
@@ -40,6 +44,7 @@ const createUser = async (req, res) => {
         setAuthCookie(res, user);
         res.status(201).json({ user: clearUserData(user) });
     } catch (error) {
+        console.error('Error during user creation:', error);
         res.status(400).json({ error: error.message });
     }
 };
@@ -57,7 +62,7 @@ const logutUser = (req, res) => {
         path: '/',
     };
     res.clearCookie('access_token', cookieOptions);
-    res.status(200).json({ message: 'User logged out successfully'});
+    res.status(200).json({ message: 'User logged out successfully' });
 }
 
 const updateUser = async (req, res) => {
