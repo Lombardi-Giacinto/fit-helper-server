@@ -5,7 +5,7 @@ const setAuthCookie = (res, user) => {
     const token = jwt.sign({ sub: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const cookieOptions = {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV !== 'development',
         sameSite: 'None',
         path: '/',
         maxAge: 60 * 60 * 1000 // 1 h
@@ -50,7 +50,7 @@ const loginUser = (req, res) => {
 const logutUser = (req, res) => {
     const cookieOptions = {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV !== 'development',
         sameSite: 'None',
         path: '/',
     };
@@ -84,7 +84,7 @@ const deleteUser = async (req, res) => {
 
         const cookieOptions = {
             httpOnly: true,
-            secure: true,
+            secure: process.env.NODE_ENV !== 'development',
             sameSite: 'None',
             path: '/',
         };
