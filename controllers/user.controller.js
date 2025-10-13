@@ -10,7 +10,6 @@ const setAuthCookie = (res, user) => {
         sameSite: 'None',
         path: '/',
         maxAge: 60 * 60 * 1000, // 1 h
-        Partitioned: true
     };
 
     res.setHeader('Set-Cookie', [

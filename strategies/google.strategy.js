@@ -22,8 +22,8 @@ passport.use(
           user = await User.create({
             googleId: profile.id,
             email: profile.emails[0].value,
-            name: profile.name?.givenName || profile.displayName,
-            surname: profile.name?.familyName || ''
+            firstName: profile.name?.givenName || profile.displayName,
+            lastName: profile.name?.familyName || ''
           });
         }
  
