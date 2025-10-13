@@ -2,6 +2,7 @@ import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 
 const setAuthCookie = (res, user) => {
+    // Generate JWT
     const token = jwt.sign({ sub: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const cookieOptions = {
         httpOnly: true,
@@ -11,6 +12,7 @@ const setAuthCookie = (res, user) => {
         maxAge: 60 * 60 * 1000 // 1 h
     };
 
+    // Set the cookie
     res.cookie('access_token', token, cookieOptions);
 };
 
@@ -68,7 +70,6 @@ const updateUser = async (req, res) => {
         if (!updatedUser)
             return res.status(404).json({ error: 'User not found' });
 
-        //setAuthCookie(res, updatedUser);
         res.status(200).json(updatedUser);
     } catch (error) {
         res.status(500).json({ error: error.message });
