@@ -8,6 +8,8 @@ const cookieExtractor = (req) => {
         console.log("[DEBUG] Headers completi nella strategia:", req.headers);
     }
 
+    console.log("COOOOOKIEEE===",req.cookies?.access_token);
+
     return req.cookies?.access_token || null
 };
 
