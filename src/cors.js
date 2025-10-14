@@ -1,6 +1,6 @@
 const ALLOWED_ORIGINS = [
   'https://fithelper.duckdns.org',
-  'https://main.dr3pvtmhloycm.amplifyapp.com',
+  process.env.FRONTEND_URL,
   'http://localhost:3000',
 ];
 

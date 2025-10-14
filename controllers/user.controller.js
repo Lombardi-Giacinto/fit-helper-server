@@ -1,20 +1,18 @@
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 
+const CROSS_SITE_OPTIONS = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'None',
+    path: '/',
+    maxAge: 60 * 60 * 1000, // 1 ora
+};
+
 const setAuthCookie = (res, user) => {
     // Generate JWT
     const token = jwt.sign({ sub: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    const cookieOptions = {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'None',
-        path: '/',
-        maxAge: 60 * 60 * 1000, // 1 h
-    };
-
-    res.setHeader('Set-Cookie', [
-        `access_token=${token}; Path=/; Secure; HttpOnly; SameSite=None; Partitioned; Max-Age=604800`
-    ]);
+    res.cookie('access_token', token, CROSS_SITE_OPTIONS);
 };
 
 const clearUserData = (mongooseDoc) => {
@@ -52,13 +50,7 @@ const loginUser = (req, res) => {
 };
 
 const logutUser = (req, res) => {
-    const cookieOptions = {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'None',
-        path: '/',
-    };
-    res.clearCookie('access_token', cookieOptions);
+    res.clearCookie('access_token', CROSS_SITE_OPTIONS);
     res.status(200).json({ message: 'User logged out successfully' });
 }
 
@@ -85,13 +77,7 @@ const deleteUser = async (req, res) => {
         if (!deletedUser)
             return res.status(404).json({ error: 'User not found' });
 
-        const cookieOptions = {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'None',
-            path: '/',
-        };
-        res.clearCookie('access_token', cookieOptions);
+        res.clearCookie('access_token', CROSS_SITE_OPTIONS);
 
         res.status(200).json({ message: 'User deleted successfully', token });
     } catch (error) {
@@ -112,12 +98,16 @@ const checkEmail = async (req, res) => {
 const loginGoogle = (req, res) => {
     try {
         setAuthCookie(res, req.user);
+        
+        const publicUserData = clearUserData(req.user);
+        const encodedUser = encodeURIComponent(JSON.stringify(publicUserData));
         // Redirect required by the OAuth2 flow
-        res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/status=success`);
+        res.redirect(`${process.env.FRONTEND_URL}/?status=success&user=${encodedUser}`); 
     } catch (error) {
         console.error('Error during Google login process:', error);
-        res.redirect(`https://main.dr3pvtmhloycm.amplifyapp.com/status=error`);
+        res.redirect(`${process.env.FRONTEND_URL}/?status=error`);
     }
+
 }
 
 const getMe = (req, res) => {

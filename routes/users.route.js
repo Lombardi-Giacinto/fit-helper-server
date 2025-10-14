@@ -28,9 +28,13 @@ router.get('/logout', UserController.logutUser);
 
 
 // Route to start Google authentication and JWT creation
-router.get('/loginGoogle/start', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/loginGoogle/start', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
 // Callback route for Google (authorized redirect URI)
-router.get('/loginGoogle', passport.authenticate('google', { session: false }), UserController.loginGoogle);
+router.get('/loginGoogle', passport.authenticate('google', {
+  session: false,
+  failureRedirect: process.env.FRONTEND_URL + '/?status=error'
+}),
+  UserController.loginGoogle);
 
 
 //* Protected routes that require jwt
