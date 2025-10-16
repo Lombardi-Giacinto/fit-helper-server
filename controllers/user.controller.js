@@ -35,7 +35,7 @@ const createUser = async (req, res) => {
         const user = await User.create(req.body);
 
         setAuthCookie(res, user);
-        res.status(201).json({ user: clearUserData(user) });
+        res.status(201).json({message: 'User created successfully'});
     } catch (error) {
         console.error('Error during user creation:', error);
         res.status(400).json({ error: error.message });

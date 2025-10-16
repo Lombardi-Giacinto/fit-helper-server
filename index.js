@@ -44,9 +44,12 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // ==================================================
-// OTHER MIDDLEWARE
+//* OTHER MIDDLEWARE
 // ==================================================
-// Enable logging in development environment for debugging purposes.
+app.use(express.json({ limit: "10kb" }));
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: false }));
+// Enable logging in development environment for debugging purposes
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
   app.use((req, res, next) => {
@@ -57,9 +60,6 @@ if (process.env.NODE_ENV === 'development') {
 }
 // Compress all responses to improve performance.
 app.use(compression());
-app.use(express.json({ limit: "10kb" }));
-app.use(cookieParser());
-app.use(express.urlencoded({ extended: false }));
 app.use(passport.initialize());
 
 // ==================================================
