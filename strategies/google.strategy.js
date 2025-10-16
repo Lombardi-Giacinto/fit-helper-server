@@ -2,21 +2,20 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"
 import User from "../models/user.model.js";
 
+// This strategy is used for authenticating users via their Google account.
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "https://fithelper.duckdns.org/api/users/loginGoogle",
+      callbackURL: `${process.env.BACKEND_URL}/api/users/loginGoogle`,
       passReqToCallback: true,
     },
+    // This function is called after successful authentication with Google.
     async (req, accessToken, refreshToken, profile, done) => {
       try {
-        // Cerca o crea l'utente
+        // Find an existing user or create a new one.
         let user = await User.findOne({ googleId: profile.id });
-
-        //test da rimuovere in prod
-        console.log(profile);
 
         if (!user) {
           user = await User.create({

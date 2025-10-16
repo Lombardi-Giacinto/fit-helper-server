@@ -1,26 +1,38 @@
-  import cors from 'cors';
+import cors from 'cors';
 import { corsOptions } from './src/cors.js';
 import express from 'express';
 import mongoose from 'mongoose';
 import router from './routes/api.route.js';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
-
+// Security Middleware
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import hpp from 'hpp';
+// Performance and Logging Middleware
 import compression from 'compression';
 import morgan from 'morgan';
 
 const app = express();
 
-//security
+// ==================================================
+// MONGOOSE SECURITY SETTINGS
+// ==================================================
+// Prevent NoSQL injection removing ($, .) from query objects.
 mongoose.set('sanitizeFilter', true);
+// Set Mongoose to not allow fields not defined in the schema in queries.
 mongoose.set('strictQuery', true);
+// Prevents "populate" of paths not explicitly defined in the schema.
 mongoose.set('strictPopulate', true);
 
+// ==================================================
+// SECURITY MIDDLEWARE
+// ==================================================
+// Enable Cross-Origin Resource Sharing with specific options.
 app.use(cors(corsOptions));
+// Protect against HTTP Parameter Pollution attacks.
 app.use(hpp());
+// Set various HTTP headers to help secure the app.
 app.use(helmet());
 
 const limiter = rateLimit({
@@ -31,48 +43,59 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-//other middleware
+// ==================================================
+// OTHER MIDDLEWARE
+// ==================================================
+// Enable logging in development environment for debugging purposes.
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
   app.use((req, res, next) => {
-    console.log('[DEBUG] Headers della richiesta:', req.headers);
-    console.log('[DEBUG] Cookie ricevuti da cookieParser:', req.cookies);
+    console.log('[DEBUG] Request Headers:', req.headers);
+    console.log('[DEBUG] Cookies received from cookieParser:', req.cookies);
     next();
   });
 }
+// Compress all responses to improve performance.
 app.use(compression());
 app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 app.use(passport.initialize());
 
-//routes
+// ==================================================
+// ROUTES
+// ==================================================
 app.get('/', (req, res) => {
   res.json('Home Test');
 });
 app.use('/api', router);
 
-
+// ==================================================
+// ERROR HANDLING
+// ==================================================
 // Catch-all for 404 Not Found
 app.use((req, res, next) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Global error handler
+// Global error handler for all other errors.
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
+// ==================================================
 // Connection to MongoDB and server start
+// ==================================================
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
-    console.log('Connesso a MongoDB');
+    console.log('Connected to MongoDB');
     app.listen(process.env.PORT, () => {
-      console.log(`Server in ascolto su http://localhost:${process.env.PORT}`);
+      console.log(`Server listening on http://localhost:${process.env.PORT}`);
     });
   })
   .catch(err => {
-    console.error('Connection error MongoDB:', err);
+    console.error('MongoDB connection error:', err);
     process.exit(1);
   });
