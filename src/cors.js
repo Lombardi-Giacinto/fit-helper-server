@@ -1,15 +1,17 @@
-const ALLOWED_ORIGINS = [
+const ALLOWED_ORIGINS = new Set([
   process.env.BACKEND_URL,
   process.env.FRONTEND_URL,
   'http://localhost:3000',
-];
+  'http://localhost:5173'
+]);
+
 
 export const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like Postman, cURL, or server-to-server)
     if (!origin) return callback(null, true);
 
-    if (ALLOWED_ORIGINS.includes(origin)) {
+    if (ALLOWED_ORIGINS.has(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`CORS blocked: ${origin} is not allowed.`));

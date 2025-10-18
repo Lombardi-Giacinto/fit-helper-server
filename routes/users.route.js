@@ -32,6 +32,9 @@ router.post('/login', (req, res, next) => {
 }, UserController.loginUser);
 router.get('/logout', UserController.logutUser);
 
+// Route to refresh the access token
+router.post('/refresh', UserController.refreshAccessToken);
+
 
 // ==================================================
 //* SOCIAL LOGIN ROUTES (GOOGLE & FACEBOOK)

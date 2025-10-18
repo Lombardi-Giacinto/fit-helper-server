@@ -2,11 +2,23 @@ import Food from '../models/food.model.js';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-const s3 = new S3Client({ region: 'eu-central-1' });
 
+const s3 = new S3Client({ region: 'eu-central-1' });
+// Generates a pre-signed URL for a food image from S3.
+const getFoodImageUrl = (foodName) => {
+    const command = new GetObjectCommand({
+        Bucket: 'fithelper-images',
+        Key: `foods/${foodName.toLowerCase()}.webp`,
+    });
+    return getSignedUrl(s3, command, { expiresIn: 300 }); // 5 minutes
+};
+
+// ==================================================
+// FOOD CONTROLLERS
+// ==================================================
 const createFood = async (req, res) => {
     try {
-        const food = await Food.create({
+        await Food.create({
             name: req.body.name,
             calories: req.body.calories,
             protein: req.body.protein,
@@ -14,8 +26,9 @@ const createFood = async (req, res) => {
             fat: req.body.fat,
             category: req.body.category
         });
-        res.status(201).json(food);
+        res.status(201).json({ message: "Food created successfully" });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 }
@@ -23,8 +36,12 @@ const createFood = async (req, res) => {
 const getAllFoods = async (req, res) => {
     try {
         const foods = await Food.find();
+        for (const food of foods) {
+            food.imageUrl = await getFoodImageUrl(food.name);
+        }
         res.status(200).json(foods);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 }
@@ -32,11 +49,16 @@ const getAllFoods = async (req, res) => {
 const getFoodByCategory = async (req, res) => {
     try {
         const foods = await Food.find({ category: req.params.category });
-        if (foods?.length > 0)
+        if (foods.length > 0) {
+            for (const food of foods) {
+                food.imageUrl = await getFoodImageUrl(food.name);
+            }
             return res.status(200).json(foods);
+        }
 
         res.status(404).json({ error: "No food found for this category" });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 }
@@ -47,15 +69,7 @@ const getFood = async (req, res) => {
         if (!food)
             return res.status(404).json({ error: "Food not found" });
 
-        const signedUrl = await getSignedUrl(
-            s3,
-            new GetObjectCommand({
-                Bucket: 'fithelper-images',
-                Key: `foods/${food.name.toLowerCase()}.webp`,
-            }),
-            { expiresIn: 60 * 5 } // 5 minuti
-        );
-
+        const signedUrl = await getFoodImageUrl(food.name);
         res.status(200).json({ food, imageUrl: signedUrl });
 
     } catch (error) {
@@ -66,11 +80,11 @@ const getFood = async (req, res) => {
 
 const updateFood = async (req, res) => {
     try {
-        const food = await Food.findOneAndUpdate({ name: req.params.name }, req.body, { new: true });
-        if (!food)
+        const updatedFood = await Food.findOneAndUpdate({ name: req.params.name }, req.body, { new: true, runValidators: true });
+        if (!updatedFood)
             return res.status(404).json({ error: "Food not found" });
 
-        res.status(200).json({ imageUrl: signedUrl });
+        res.status(200).json(updatedFood);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: error.message });
@@ -81,9 +95,10 @@ const deleteFood = async (req, res) => {
     try {
         const food = await Food.findOneAndDelete({ name: req.params.name });
         if (food)
-            return res.status(200).json("Food deleted successfully");
-        res.status(404).json({ error: "No food found" });
+            return res.status(200).json({ message: "Food deleted successfully" });
+        res.status(404).json({ error: "Food not found" });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 }
