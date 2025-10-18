@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/22983448/README.md)
 ```markdown
 # Fit Helper Server 🏋️‍♂️
 
