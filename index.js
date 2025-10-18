@@ -24,6 +24,8 @@ mongoose.set('sanitizeFilter', true);
 mongoose.set('strictQuery', true);
 // Prevents "populate" of paths not explicitly defined in the schema.
 mongoose.set('strictPopulate', true);
+mongoose.set('debug', true);
+
 
 // ==================================================
 // SECURITY MIDDLEWARE

@@ -1,32 +1,30 @@
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 
+const BASE_COOKIE_OPTIONS = {
+    httpOnly: true,
+    path: '/',
+    secure: true,
+    sameSite: 'None',
+};
+// ...BASE_COOKIE_OPTIONS use Spread operator
 
 //Generates and sets authentication cookies (access_token and refresh_token)
 const setAuthCookies = (res, user, rememberMe = false) => {
     // Access token
     const accessToken = jwt.sign({ sub: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' });
-    const accessTokenCookieOptions = {
-        httpOnly: true,
-        path: '/',
-        secure: true, 
-        sameSite: 'None', 
+    res.cookie('access_token', accessToken, {
+        ...BASE_COOKIE_OPTIONS,
         maxAge: 15 * 60 * 1000, // 15 min
-    };
-    res.cookie('access_token', accessToken, accessTokenCookieOptions);
+    });
 
     // Refresh token
-    const refreshTokenExpiresIn = rememberMe ? '7d' : '1h';
-    const refreshTokenMaxAge = rememberMe ? 7 * 24 * 60 * 60 * 1000 : 60 * 60 * 1000;
-    const refreshToken = jwt.sign({ sub: user._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: refreshTokenExpiresIn });
-    const refreshTokenCookieOptions = {
-        httpOnly: true,
-        path: '/',
-        secure: true, // Should be true in production
-        sameSite: 'None',
-        maxAge: refreshTokenMaxAge,
-    };
-    res.cookie('refresh_token', refreshToken, refreshTokenCookieOptions);
+    const ExpiresIn = rememberMe ? '7d' : '1h';
+    const refreshToken = jwt.sign({ sub: user._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: ExpiresIn });
+    res.cookie('refresh_token', refreshToken, {
+        ...BASE_COOKIE_OPTIONS,
+        maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 60 * 60 * 1000, // 7 giorni o 1 ora
+    });
 };
 
 //Removes sensitive fields from a user document
@@ -58,16 +56,9 @@ const loginUser = (req, res) => {
 };
 
 const logutUser = (req, res) => {
-    const cookieOptions = {
-        httpOnly: true,
-        path: '/',
-        secure: true,
-        sameSite: 'None',
-    };
-
     // Clear both authentication cookies
-    res.clearCookie('access_token', cookieOptions);
-    res.clearCookie('refresh_token', cookieOptions);
+    res.clearCookie('access_token', BASE_COOKIE_OPTIONS);
+    res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
     res.status(200).json({ message: 'User logged out successfully' });
 }
 
@@ -89,11 +80,15 @@ const refreshAccessToken = async (req, res) => {
 
         // Issue a new access token only
         const accessToken = jwt.sign({ sub: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' });
-        res.cookie('access_token', accessToken, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 15 * 60 * 1000, path: '/' });
+        res.cookie('access_token', accessToken, { ...BASE_COOKIE_OPTIONS, maxAge: 15 * 60 * 1000 });
         res.status(200).json({ message: 'Token refreshed successfully' });
 
     } catch (error) {
-        return res.status(403).json({ message: 'Invalid or expired refresh token' });
+        // Se il refresh token è scaduto o non valido, puliscilo dal browser.
+        // Le opzioni per clearCookie devono corrispondere a quelle usate per impostarlo (eccetto expires/maxAge)
+        res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
+        console.error('Error during token refresh:', error.name, error.message);
+        return res.status(403).json({ message: 'Invalid or expired refresh token.' });
     }
 };
 
@@ -120,16 +115,9 @@ const deleteUser = async (req, res) => {
         if (!deletedUser)
             return res.status(404).json({ error: 'User not found' });
 
-        const cookieOptions = {
-            httpOnly: true,
-            path: '/',
-            secure: true,
-            sameSite: 'None'
-        };
-
         // Clear the only cookie that matters
-        res.clearCookie('access_token', cookieOptions);
-        res.clearCookie('refresh_token', cookieOptions);
+        res.clearCookie('access_token', BASE_COOKIE_OPTIONS);
+        res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
 
         res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
