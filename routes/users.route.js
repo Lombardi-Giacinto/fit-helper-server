@@ -9,10 +9,14 @@ import UserController from '../controllers/user.controller.js';
 const router = express.Router();
 
 // ==================================================
-//* PUBLIC ROUTES
+//* REGISTRATION ROUTE
 // ==================================================
 router.post('/register', UserController.createUser);
 router.get("/checkEmail/:email", UserController.checkEmail);
+router.get('/verifyEmail/:token', UserController.emailVerification);
+router.post('/resendVerification',UserController.resendVerification);
+//router.post('/resetPassword',UserController.resetPassword);
+
 
 // ==================================================
 //* AUTHENTICATION ROUTES
@@ -30,7 +34,7 @@ router.post('/login', (req, res, next) => {
     next();
   })(req, res, next);
 }, UserController.loginUser);
-router.get('/logout', UserController.logutUser);
+router.get('/logout', UserController.logoutUser);
 
 // Route to refresh the access token
 router.post('/refresh', UserController.refreshAccessToken);

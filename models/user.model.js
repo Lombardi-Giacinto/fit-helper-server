@@ -4,21 +4,22 @@ import bcrypt from 'bcrypt';
 const userSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
-    email: { type: String, required: true, unique: true , lowercase: true , trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     // Password is only required if the user is not signing up with Google or Facebook
-    password: { type: String, required: function() { return !this.googleId && !this.facebookId; } },
+    password: { type: String, required: function () { return !this.googleId && !this.facebookId; } },
     // OAuth provider IDs. `sparse: true` creates a unique index
     googleId: { type: String, unique: true, sparse: true },
     facebookId: { type: String, unique: true, sparse: true },
     birthdate: { type: Date },
-    gender: { type: String, enum:['male', 'female', 'other'],default: 'other'  },
-    activity: { type: String, enum: ['sedentary', 'lightlyActive','veryActive'], default: 'sedentary' },
-    height: { type: Number, default:0},//cm
-    weight: { type: Number, default:0},//Kg
-},{ timestamps: true }); 
+    gender: { type: String, enum: ['male', 'female', 'other'], default: 'other' },
+    activity: { type: String, enum: ['sedentary', 'lightlyActive', 'veryActive'], default: 'sedentary' },
+    height: { type: Number, default: 0 },//cm
+    weight: { type: Number, default: 0 },//Kg
+    isVerified: { type: Boolean, default: false },
+}, { timestamps: true });
 
 //Pre-save hook to hash the user's password before saving it to the database
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
     if (!this.isModified('password') || !this.password) {
         return next();
     }
@@ -33,7 +34,7 @@ userSchema.pre('save', async function(next) {
 
 // Compares a candidate password with the user's hashed password
 userSchema.methods.comparePassword = function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+    return bcrypt.compare(candidatePassword, this.password);
 };
 
 export default mongoose.model("User", userSchema);

@@ -1,5 +1,6 @@
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
+import { sendEmail } from '../services/email.service.js';
 
 const BASE_COOKIE_OPTIONS = {
     httpOnly: true,
@@ -27,41 +28,6 @@ const setAuthCookies = (res, user, rememberMe = false) => {
     });
 };
 
-//Removes sensitive fields from a user document
-const clearUserData = (mongooseDoc) => {
-    // The rest operator(...) contains all other fields
-    const {_id ,password, googleId, createdAt, updatedAt, __v, ...userResponse } = mongooseDoc.toObject();
-    return userResponse;
-}
-
-// ==================================================
-// USER CONTROLLERS
-// ==================================================
-
-const createUser = async (req, res) => {
-    try {
-        const user = await User.create(req.body);
-        setAuthCookies(res, user, req.body?.rememberMe);
-        res.status(201).json({ message: 'User created successfully' });
-    } catch (error) {
-        console.error('Error during user creation:', error);
-        res.status(400).json({ error: error.message });
-    }
-};
-
-//Handles local user login
-const loginUser = (req, res) => {
-    setAuthCookies(res, req.user, req.body?.rememberMe);
-    res.status(200).json({ user: clearUserData(req.user) });
-};
-
-const logutUser = (req, res) => {
-    // Clear both authentication cookies
-    res.clearCookie('access_token', BASE_COOKIE_OPTIONS);
-    res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
-    res.status(200).json({ message: 'User logged out successfully' });
-}
-
 /**
  * Generates a new access_token using a valid refresh_token.
  */
@@ -87,10 +53,103 @@ const refreshAccessToken = async (req, res) => {
         // Se il refresh token è scaduto o non valido, puliscilo dal browser.
         // Le opzioni per clearCookie devono corrispondere a quelle usate per impostarlo (eccetto expires/maxAge)
         res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
+        clearAuthCookies(res);
         console.error('Error during token refresh:', error.name, error.message);
         return res.status(403).json({ message: 'Invalid or expired refresh token.' });
     }
 };
+
+//Removes sensitive fields from a user document
+const clearUserData = (mongooseDoc) => {
+    // The rest operator(...) contains all other fields
+    const { _id, password, googleId, createdAt, updatedAt, __v, ...userResponse } = mongooseDoc.toObject();
+    return userResponse;
+}
+
+const sendVerificationEmail = async (user) => {
+    const verificationToken = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_VERIFICATION_SECRET,
+        { expiresIn: '1d' }
+    );
+    const verificationURL = `${process.env.BACKEND_URL}/verifyEmail?token=${verificationToken}`;
+
+    await sendEmail(
+        user.email,
+        'Conferma il tuo indirizzo email',
+        `<h1>Ciao ${user.firstName} ${user.lastname},</h1>
+        <p>Clicca sul link qui sotto per verificare la tua email e attivare il tuo account FitHelper:</p>
+        <a href="${verificationURL}">Verifica Account</a>`
+    );
+}
+
+// ==================================================
+// USER CONTROLLERS
+// ==================================================
+const createUser = async (req, res) => {
+    try {
+        const user = await User.create(req.body);
+
+        sendVerificationEmail(user);
+        res.status(201).json({ message: 'User created successfully' });
+    } catch (error) {
+        console.error('Error during user creation:', error);
+        res.status(400).json({ error: error.message });
+    }
+};
+
+const emailVerification = async (req, res) => {
+    const { token } = req.query;
+
+    if (!token) {
+        // Reindirizza al frontend con stato di errore
+        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=no_token`);
+    }
+
+    try {
+        // 1. Decodifica e verifica il token di verifica (controlla la scadenza)
+        const decoded = jwt.verify(token, process.env.JWT_VERIFICATION_SECRET);
+
+        const user = await User.findByIdAndUpdate(decoded.userId, { isVerified: true }, { new: true });
+
+        if (!user) {
+            return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=user_not_found`);
+        }
+
+        setAuthCookies(res, user);
+        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?status=success`);
+    } catch (error) {
+        console.error('Error during email verification:', error);
+        if (error.name === 'TokenExpiredError')
+            return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=token_expired`);
+    }
+}
+
+const resendVerification = async (req, res) => {
+    try {
+        const user = await User.findOne(req.user.email);
+        if (user.isVerified)
+            return res.status(400).json({ message: 'L\'account è già stato verificato.' });
+        sendVerificationEmail(user);
+        res.status(200).json({ message: 'Email di verifica inviata con successo.' });
+    } catch (error) {
+        cconsole.error('Errore nel reinvio della verifica:', error);
+        res.status(500).json({ message: 'Errore interno del server.' });
+    }
+}
+
+//Handles local user login
+const loginUser = (req, res) => {
+    setAuthCookies(res, req.user, req.body?.rememberMe);
+    res.status(200).json({ user: clearUserData(req.user) });
+};
+
+const logoutUser = (req, res) => {
+    // Clear both authentication cookies
+    res.clearCookie('access_token', BASE_COOKIE_OPTIONS);
+    res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
+    res.status(200).json({ message: 'User logged out successfully' });
+}
 
 const updateUser = async (req, res) => {
     try {
@@ -158,12 +217,14 @@ const getMe = (req, res) => {
 
 export default {
     createUser,
+    emailVerification,
+    resendVerification,
     loginUser,
-    logutUser,
+    logoutUser,
     refreshAccessToken,
     updateUser,
     deleteUser,
     checkEmail,
     loginGoogle,
     getMe,
-};
+}
