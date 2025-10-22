@@ -57,7 +57,7 @@ router.get('/loginFacebook/start', passport.authenticate('facebook', { scope: ['
 router.get('/loginFacebook', passport.authenticate('facebook', {
   session: false,
   failureRedirect: process.env.FRONTEND_URL + '/?status=error' // Redirect on failure
-}), UserController.loginGoogle); // Sets cookie and redirects
+}), UserController.loginFacebook); // Sets cookie and redirects
 
 
 // ==================================================

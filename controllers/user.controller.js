@@ -73,7 +73,7 @@ const sendVerificationEmail = async (user) => {
         { expiresIn: '1d' }
     );
     const verificationURL = `${process.env.BACKEND_URL}/verifyEmail?token=${verificationToken}`;
-
+    console.log(verificationURL);
     await sendEmail(
         user.email,
         'Conferma il tuo indirizzo email',
@@ -89,7 +89,6 @@ const sendVerificationEmail = async (user) => {
 const createUser = async (req, res) => {
     try {
         const user = await User.create(req.body);
-
         sendVerificationEmail(user);
         res.status(201).json({ message: 'User created successfully' });
     } catch (error) {
@@ -120,8 +119,7 @@ const emailVerification = async (req, res) => {
         return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?status=success`);
     } catch (error) {
         console.error('Error during email verification:', error);
-        if (error.name === 'TokenExpiredError')
-            return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=token_expired`);
+        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=token_expired`);
     }
 }
 
@@ -199,10 +197,9 @@ const checkEmail = async (req, res) => {
  */
 const loginGoogle = (req, res) => {
     try {
-        // For OAuth, "remember me" is often the default behavior. You could add logic to check a query param if needed.
-        setAuthCookies(res, req.user, true); // Let's assume Google login implies "remember me"
-        // Redirect required by the OAuth2 flow
-        res.redirect(`${process.env.FRONTEND_URL}/?status=success`);
+        setAuthCookies(res, req.user, true); //Google login implies "remember me"
+
+        res.redirect(`${process.env.FRONTEND_URL}/?status=success`);// Redirect required by the OAuth2 flow
     } catch (error) {
         console.error('Error during Google login process:', error);
         res.redirect(`${process.env.FRONTEND_URL}/?status=error`);
@@ -226,5 +223,6 @@ export default {
     deleteUser,
     checkEmail,
     loginGoogle,
-    getMe,
+    loginSocial,
+    getMe
 }

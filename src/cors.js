@@ -1,8 +1,7 @@
 const ALLOWED_ORIGINS = new Set([
   process.env.BACKEND_URL,
   process.env.FRONTEND_URL,
-  process.env.FRONTEND2_URL,
-  'http://localhost:5173'
+  process.env.FRONTEND2_URL
 ]);
 
 

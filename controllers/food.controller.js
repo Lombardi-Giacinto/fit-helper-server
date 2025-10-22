@@ -35,11 +35,13 @@ const createFood = async (req, res) => {
 
 const getAllFoods = async (req, res) => {
     try {
-        const foods = await Food.find();
-        for (const food of foods) {
-            food.imageUrl = await getFoodImageUrl(food.name);
-        }
-        res.status(200).json(foods);
+        const foods = await Food.find().lean(); // .lean() per performance migliori
+        const foodsWithUrls = await Promise.all(foods.map(async (food) => {
+            const imageUrl = await getFoodImageUrl(food.name);
+            return { ...food, imageUrl };
+        }));
+
+        res.status(200).json(foodsWithUrls);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: error.message });
@@ -49,14 +51,14 @@ const getAllFoods = async (req, res) => {
 const getFoodByCategory = async (req, res) => {
     try {
         const foods = await Food.find({ category: req.params.category });
-        if (foods.length > 0) {
-            for (const food of foods) {
-                food.imageUrl = await getFoodImageUrl(food.name);
-            }
-            return res.status(200).json(foods);
+        if (!foods || foods.length === 0) {
+            return res.status(404).json({ error: "No food found for this category" });
         }
+        const foodsWithUrls = await Promise.all(foods.map(async (food) => {
+            return { ...food.toObject(), imageUrl: await getFoodImageUrl(food.name) };
+        }));
+        res.status(200).json(foodsWithUrls);
 
-        res.status(404).json({ error: "No food found for this category" });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: error.message });

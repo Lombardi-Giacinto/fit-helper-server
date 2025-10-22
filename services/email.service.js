@@ -1,15 +1,15 @@
 import nodemailer from 'nodemailer';
-import { SESClient } from '@aws-sdk/client-ses';
+import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 
-const sesClient = new SESClient({
-    region: process.env.SES_REGION || "eu-central-1",
+const sesClient = new SESv2Client({
+    region: 'eu-central-1',
     credentials: fromNodeProviderChain(),
 });
 
 // Configurazione del transporter per AWS SES v3
 const transporter = nodemailer.createTransport({
-    SES: { ses: sesClient }
+    SES: { sesv2: sesClient, aws: { SendEmailCommand } }
 });
 
 // Funzione per inviare un'email tramite AWS SES
