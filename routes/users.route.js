@@ -54,10 +54,10 @@ router.get('/loginGoogle', passport.authenticate('google', {
 // Route to start Facebook authentication and JWT creation
 router.get('/loginFacebook/start', passport.authenticate('facebook', { scope: ['email'], session: false }));
 // Callback route for Facebook (authorized redirect URI)
-router.get('/loginFacebook', passport.authenticate('facebook', {
+/*router.get('/loginFacebook', passport.authenticate('facebook', {
   session: false,
   failureRedirect: process.env.FRONTEND_URL + '/?status=error' // Redirect on failure
-}), UserController.loginFacebook); // Sets cookie and redirects
+}), UserController.loginFacebook); // Sets cookie and redirects*/
 
 
 // ==================================================

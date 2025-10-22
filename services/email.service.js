@@ -9,32 +9,42 @@ const sesClient = new SESv2Client({
 
 // Configurazione del transporter per AWS SES v3
 const transporter = nodemailer.createTransport({
-    SES: { sesv2: sesClient, aws: { SendEmailCommand } }
+    SES: { ses: sesClient, aws: { SendEmailCommand } }
 });
 
 // Funzione per inviare un'email tramite AWS SES
 export const sendEmail = async (to, subject, htmlContent) => {
+    // Parametri per il comando SendEmailCommand dell'SDK di AWS SESv2
+    const params = {
+        FromEmailAddress: process.env.EMAIL_FROM,
+        Destination: {
+            ToAddresses: [to], // L'SDK si aspetta un array di indirizzi
+        },
+        Content: {
+            Simple: {
+                Subject: {
+                    Data: subject,
+                    Charset: 'UTF-8',
+                },
+                Body: {
+                    Html: {
+                        Data: htmlContent,
+                        Charset: 'UTF-8',
+                    },
+                },
+            },
+        },
+    };
+
     try {
-        const mailOptions = {
-            from: process.env.EMAIL_FROM,
-            to: to,
-            subject: subject,
-            html: htmlContent,
-        };
-
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent. MessageId: %s', info.messageId);
-
-        return { success: true, messageId: info.messageId };
+        // Invia l'email usando direttamente il client dell'SDK
+        const command = new SendEmailCommand(params);
+        const data = await sesClient.send(command);
+        console.log('Email sent directly via AWS SDK. MessageId: %s', data.MessageId);
+        return { success: true, messageId: data.MessageId };
 
     } catch (error) {
         console.error('ERROR sending email via SES SDK:', error);
-
-        // Controlla se l'errore è dovuto alla modalità Sandbox
-        if (error.responseCode === 454) {
-            console.error("L'invio potrebbe essere bloccato dalla modalità Sandbox di SES.");
-        }
-
         return { success: false, error: error.message };
     }
 };

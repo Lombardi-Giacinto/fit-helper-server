@@ -73,7 +73,7 @@ const sendVerificationEmail = async (user) => {
         { expiresIn: '1d' }
     );
     const verificationURL = `${process.env.BACKEND_URL}/verifyEmail?token=${verificationToken}`;
-    console.log(verificationURL);
+    console.log("Verification URL:",verificationURL);
     await sendEmail(
         user.email,
         'Conferma il tuo indirizzo email',
@@ -223,6 +223,5 @@ export default {
     deleteUser,
     checkEmail,
     loginGoogle,
-    loginSocial,
     getMe
 }
