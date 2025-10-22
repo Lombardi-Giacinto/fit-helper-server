@@ -1,46 +1,43 @@
 import nodemailer from 'nodemailer';
-import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 
-const sesClient = new SESv2Client({
+const sesClient = new SESClient({
     region: 'eu-central-1',
     credentials: fromNodeProviderChain(),
 });
 
 // Configurazione del transporter per AWS SES v3
 const transporter = nodemailer.createTransport({
-    SES: { ses: sesClient, aws: { SendEmailCommand } }
+    // Questo transporter non verrà più usato se si invia direttamente con l'SDK
 });
 
 // Funzione per inviare un'email tramite AWS SES
 export const sendEmail = async (to, subject, htmlContent) => {
-    // Parametri per il comando SendEmailCommand dell'SDK di AWS SESv2
+    // Parametri per il comando SendEmailCommand dell'SDK di AWS SES (API v1)
     const params = {
-        FromEmailAddress: process.env.EMAIL_FROM,
+        Source: process.env.EMAIL_FROM,
         Destination: {
             ToAddresses: [to], // L'SDK si aspetta un array di indirizzi
         },
-        Content: {
-            Simple: {
-                Subject: {
-                    Data: subject,
+        Message: {
+            Subject: {
+                Data: subject,
+                Charset: 'UTF-8',
+            },
+            Body: {
+                Html: {
+                    Data: htmlContent,
                     Charset: 'UTF-8',
-                },
-                Body: {
-                    Html: {
-                        Data: htmlContent,
-                        Charset: 'UTF-8',
-                    },
                 },
             },
         },
     };
 
     try {
-        // Invia l'email usando direttamente il client dell'SDK
         const command = new SendEmailCommand(params);
         const data = await sesClient.send(command);
-        console.log('Email sent directly via AWS SDK. MessageId: %s', data.MessageId);
+        console.log('Email sent directly via AWS SDK (v1 API). MessageId: %s', data.MessageId);
         return { success: true, messageId: data.MessageId };
 
     } catch (error) {
