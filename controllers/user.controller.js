@@ -1,6 +1,6 @@
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
-import { sendVerificationEmail, sendPasswordResetEmail } from '../mail/email.handler.js';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../email/email.handler.js';
 
 const BASE_COOKIE_OPTIONS = {
     httpOnly: true,
@@ -88,9 +88,9 @@ const loginUser = (req, res) => {
 };
 
 const logoutUser = (req, res) => {
-    // Clear both authentication cookies
-    res.clearCookie('access_token', BASE_COOKIE_OPTIONS);
-    res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
+    const logoutOptions = { ...BASE_COOKIE_OPTIONS, expires: new Date(0) };
+    res.cookie('access_token', '', logoutOptions);
+    res.cookie('refresh_token', '', logoutOptions);
     res.status(200).json({ message: 'User logged out successfully' });
 }
 
