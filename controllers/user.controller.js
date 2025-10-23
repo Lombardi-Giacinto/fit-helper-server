@@ -53,8 +53,7 @@ const refreshAccessToken = async (req, res) => {
     } catch (error) {
         // Se il refresh token è scaduto o non valido, puliscilo dal browser.
         // Le opzioni per clearCookie devono corrispondere a quelle usate per impostarlo (eccetto expires/maxAge)
-        res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
-        clearAuthCookies(res);
+        logoutUser(req, res); // Usa la funzione di logout per pulire i cookie
         console.error('Error during token refresh:', error.name, error.message);
         return res.status(403).json({ message: 'Invalid or expired refresh token.' });
     }
@@ -174,7 +173,7 @@ const emailVerification = async (req, res) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_VERIFICATION_SECRET);
 
-        const user = await User.findByIdAndUpdate(decoded.userId, { isVerified: true }, { new: true });
+        const user = await User.findByIdAndUpdate(decoded.sub, { isVerified: true }, { new: true });
         if (!user) {
             return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=user_not_found`);
         }
@@ -205,10 +204,10 @@ const emailResetPassword = async (req, res) => {
         const user = await User.findOne({ email: req.params.email });
         if (!user)
             return res.status(404).json({ message: 'user_not_found' });
-        if(!user.isVerified)
+        if (!user.isVerified)
             return res.status(400).json({ message: 'not_verified' });
-        if(user.googleId || user.facebookId)
-            return res.status(400).json({message:'social_account'});
+        if (user.googleId || user.facebookId)
+            return res.status(400).json({ message: 'social_account' });
 
         await sendPasswordResetEmail(user);
         res.status(200).json({ message: 'Password reset email sent successfully' });
@@ -219,14 +218,28 @@ const emailResetPassword = async (req, res) => {
 }
 
 const resetPassword = async (req, res) => {
-    try {
-        const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        const user = await User.findByIdAndUpdate(payload.sub, { password: req.body.password }, { new: true });
+    const { token, password } = req.body;
+    if (!token || !password) {
+        return res.status(400).json({ error: 'Token and new password are required.' });
+    }
 
+    try {
+        const payload = jwt.verify(token, process.env.JWT_PASSWORD_RESET_SECRET);
+        const user = await User.findById(payload.sub);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        user.password = password;
+        await user.save();
         res.status(200).json({ message: 'Password reset successfully' });
     } catch (error) {
         console.error('Error during password reset:', error);
-        res.status(500).json({ error: error.message });
+        // Gestisci errori specifici del token (scaduto, non valido)
+        if (error.name === 'TokenExpiredError' || error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: 'Invalid or expired password reset token.' });
+        }
+        res.status(500).json({ error: 'An internal server error occurred.' });
     }
 }
 
