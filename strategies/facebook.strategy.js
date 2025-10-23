@@ -18,10 +18,10 @@ passport.use(new FacebookStrategy({
             if (!user) {
                 user = await User.create({
                     facebookId: profile.id,
-                    // Email might not always be available
                     email: profile.emails?.[0]?.value, 
                     firstName: profile.displayName.split(' ')[0],
-                    lastName: profile.displayName.split(' ').slice(1).join(' ')
+                    lastName: profile.displayName.split(' ').slice(1).join(' '),
+                    isVerified: true,
                 });
             }
             return done(null, user);

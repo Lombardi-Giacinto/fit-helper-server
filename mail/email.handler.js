@@ -1,0 +1,39 @@
+import jwt from 'jsonwebtoken';
+import { sendEmail } from './email.service.js';
+
+
+export const sendVerificationEmail = async (user) => {
+    const verificationToken = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_VERIFICATION_SECRET,
+        { expiresIn: '1d' }
+    );
+    const verificationURL = `${process.env.BACKEND_URL}/api/users/verifyEmail/${verificationToken}`;
+    console.log("Verification URL:", verificationURL);
+
+    const htmlContent = `<h1>Ciao ${user.firstName} ${user.lastname},</h1><p>Clicca sul link qui sotto per verificare la tua email e attivare il tuo account FitHelper:</p><a href="${verificationURL}">Verifica Account</a>`;
+
+    await sendEmail(
+        user.email,
+        'Conferma il tuo indirizzo email',
+        htmlContent
+    );
+};
+
+export const sendPasswordResetEmail = async (user) => {
+    const restToken = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_VERIFICATION_SECRET,
+        { expiresIn: '1h' }
+    );
+
+    const resetURL = `${process.env.FRONTEND_URL}/resetPassword?token=${restToken}`;
+    console.log("Reset URL:", resetURL);
+    const htmlContent = `<h1>Ciao ${user.firstName},</h1><p>Hai richiesto di reimpostare la tua password. Clicca sul link qui sotto per procedere:</p><a href="${resetURL}">Reimposta Password</a><p>Se non hai richiesto tu questa operazione, puoi ignorare questa email.</p>`;
+
+    await sendEmail(
+        user.email,
+        'Reimposta la tua password',
+        htmlContent
+    );
+};

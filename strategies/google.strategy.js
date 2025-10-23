@@ -22,7 +22,8 @@ passport.use(
             googleId: profile.id,
             email: profile.emails[0].value,
             firstName: profile.name?.givenName || profile.displayName,
-            lastName: profile.name?.familyName || ''
+            lastName: profile.name?.familyName || '',
+            isVerified: true,
           });
         }
  

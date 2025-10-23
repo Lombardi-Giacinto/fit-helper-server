@@ -15,7 +15,8 @@ router.post('/register', UserController.createUser);
 router.get("/checkEmail/:email", UserController.checkEmail);
 router.get('/verifyEmail/:token', UserController.emailVerification);
 router.post('/resendVerification',UserController.resendVerification);
-//router.post('/resetPassword',UserController.resetPassword);
+router.get('/resetPasswordRequest/:email',UserController.emailResetPassword);
+router.post('/resetPassword',UserController.resetPassword);
 
 
 // ==================================================

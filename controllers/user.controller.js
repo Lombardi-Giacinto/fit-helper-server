@@ -1,6 +1,7 @@
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
-import { sendEmail } from '../services/email.service.js';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../mail/email.handler.js';
+
 
 const BASE_COOKIE_OPTIONS = {
     httpOnly: true,
@@ -66,23 +67,6 @@ const clearUserData = (mongooseDoc) => {
     return userResponse;
 }
 
-const sendVerificationEmail = async (user) => {
-    const verificationToken = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_VERIFICATION_SECRET,
-        { expiresIn: '1d' }
-    );
-    const verificationURL = `${process.env.BACKEND_URL}/verifyEmail?token=${verificationToken}`;
-    console.log("Verification URL:",verificationURL);
-    await sendEmail(
-        user.email,
-        'Conferma il tuo indirizzo email',
-        `<h1>Ciao ${user.firstName} ${user.lastname},</h1>
-        <p>Clicca sul link qui sotto per verificare la tua email e attivare il tuo account FitHelper:</p>
-        <a href="${verificationURL}">Verifica Account</a>`
-    );
-}
-
 // ==================================================
 // USER CONTROLLERS
 // ==================================================
@@ -97,44 +81,7 @@ const createUser = async (req, res) => {
     }
 };
 
-const emailVerification = async (req, res) => {
-    const { token } = req.query;
 
-    if (!token) {
-        // Reindirizza al frontend con stato di errore
-        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=no_token`);
-    }
-
-    try {
-        // 1. Decodifica e verifica il token di verifica (controlla la scadenza)
-        const decoded = jwt.verify(token, process.env.JWT_VERIFICATION_SECRET);
-
-        const user = await User.findByIdAndUpdate(decoded.userId, { isVerified: true }, { new: true });
-
-        if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=user_not_found`);
-        }
-
-        setAuthCookies(res, user);
-        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?status=success`);
-    } catch (error) {
-        console.error('Error during email verification:', error);
-        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=token_expired`);
-    }
-}
-
-const resendVerification = async (req, res) => {
-    try {
-        const user = await User.findOne(req.user.email);
-        if (user.isVerified)
-            return res.status(400).json({ message: 'L\'account è già stato verificato.' });
-        sendVerificationEmail(user);
-        res.status(200).json({ message: 'Email di verifica inviata con successo.' });
-    } catch (error) {
-        cconsole.error('Errore nel reinvio della verifica:', error);
-        res.status(500).json({ message: 'Errore interno del server.' });
-    }
-}
 
 //Handles local user login
 const loginUser = (req, res) => {
@@ -212,10 +159,82 @@ const getMe = (req, res) => {
     res.status(200).json({ user: clearUserData(req.user) });
 };
 
+// ==================================================
+// EMAIL
+// ==================================================
+
+const emailVerification = async (req, res) => {
+    const { token } = req.params;
+
+    if (!token) {
+        // Reindirizza al frontend con stato di errore
+        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=no_token`);
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_VERIFICATION_SECRET);
+
+        const user = await User.findByIdAndUpdate(decoded.userId, { isVerified: true }, { new: true });
+        if (!user) {
+            return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=user_not_found`);
+        }
+
+        setAuthCookies(res, user);
+        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?status=success`);
+    } catch (error) {
+        console.error('Error during email verification:', error);
+        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=token_expired`);
+    }
+}
+
+const resendVerification = async (req, res) => {
+    try {
+        const user = await User.findOne(req.user.email);
+        if (user.isVerified)
+            return res.status(400).json({ message: 'L\'account è già stato verificato.' });
+        await sendVerificationEmail(user);
+        res.status(200).json({ message: 'Email di verifica inviata con successo.' });
+    } catch (error) {
+        cconsole.error('Errore nel reinvio della verifica:', error);
+        res.status(500).json({ message: 'Errore interno del server.' });
+    }
+}
+
+const emailResetPassword = async (req, res) => {
+    try {
+        const user = await User.findOne({ email: req.params.email });
+        if (!user)
+            return res.status(404).json({ message: 'user_not_found' });
+        if(!user.isVerified)
+            return res.status(400).json({ message: 'not_verified' });
+        if(user.googleId || user.facebookId)
+            return res.status(400).json({message:'social_account'});
+
+        await sendPasswordResetEmail(user);
+        res.status(200).json({ message: 'Password reset email sent successfully' });
+    } catch (error) {
+        console.error('Error during email password reset:', error);
+        res.status(500).json({ message: error.message });
+    }
+}
+
+const resetPassword = async (req, res) => {
+    try {
+        const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const user = await User.findByIdAndUpdate(payload.sub, { password: req.body.password }, { new: true });
+
+        res.status(200).json({ message: 'Password reset successfully' });
+    } catch (error) {
+        console.error('Error during password reset:', error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
 export default {
     createUser,
     emailVerification,
     resendVerification,
+    emailResetPassword,
     loginUser,
     logoutUser,
     refreshAccessToken,
@@ -223,5 +242,6 @@ export default {
     deleteUser,
     checkEmail,
     loginGoogle,
-    getMe
+    getMe,
+    resetPassword
 }
