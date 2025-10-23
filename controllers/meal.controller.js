@@ -17,7 +17,7 @@ const calculateCalories = async (req, res) => {
         return res.status(200).json({ calories: totalCalories });
     } catch (error) {
         console.error('Error calculating calories:', error);
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ message: 'Internal server error'});
     }
 
 };

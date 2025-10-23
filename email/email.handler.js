@@ -37,3 +37,13 @@ export const sendPasswordResetEmail = async (user) => {
         htmlContent
     );
 };
+
+export const sendDeleteAccount = async (user) => {
+    const htmlContent = `<h1>Ciao ${user.firstName},</h1><pp>Il tuo account FitHelper è stato eliminato con successo. Ci dispiace vederti andare via!</p><p>Se hai eliminato il tuo account per errore o hai bisogno di assistenza, non esitare a contattarci.</p>`;
+
+    await sendEmail(
+        user.email,
+        'Conferma eliminazione account FitHelper',
+        htmlContent
+    );
+};

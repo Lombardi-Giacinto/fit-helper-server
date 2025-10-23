@@ -1,13 +1,13 @@
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
-import { sendVerificationEmail, sendPasswordResetEmail } from '../email/email.handler.js';
+import { sendVerificationEmail, sendPasswordResetEmail,sendDeleteAccount } from '../email/email.handler.js';
 
 const BASE_COOKIE_OPTIONS = {
     httpOnly: true,
     path: '/',
     secure: true,
     domain: 'fithelper.top',
-    sameSite: 'Lax'
+    sameSite: 'None' // Permette l'invio di cookie tra sottodomini (api. e www.)
 }
 
 //Generates and sets authentication cookies (access_token and refresh_token)
@@ -51,10 +51,12 @@ const refreshAccessToken = async (req, res) => {
 
     } catch (error) {
         // Se il refresh token è scaduto o non valido, puliscilo dal browser.
-        // Le opzioni per clearCookie devono corrispondere a quelle usate per impostarlo (eccetto expires/maxAge)
-        logoutUser(req, res); // Usa la funzione di logout per pulire i cookie
+        // Pulisci i cookie senza terminare la risposta, per poter inviare lo status 403.
+        res.clearCookie('access_token', BASE_COOKIE_OPTIONS);
+        res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
+
         console.error('Error during token refresh:', error.name, error.message);
-        return res.status(403).json({ message: 'Invalid or expired refresh token.' });
+        res.status(403).json({ message: 'Invalid or expired refresh token.' });
     }
 };
 
@@ -88,10 +90,20 @@ const loginUser = (req, res) => {
 };
 
 const logoutUser = (req, res) => {
-    const logoutOptions = { ...BASE_COOKIE_OPTIONS, expires: new Date(0) };
-    res.cookie('access_token', '', logoutOptions);
-    res.cookie('refresh_token', '', logoutOptions);
+    // --- INIZIO BLOCCO DI DEBUG ---
+    console.log('======================================');
+    console.log('[DEBUG] Richiesta di LOGOUT ricevuta');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Origine della richiesta (Origin header):', req.headers.origin);
+    console.log('Cookie header grezzo:', req.headers.cookie);
+    console.log('Cookie ricevuti da cookieParser:', req.cookies);
+    console.log('======================================');
+    // --- FINE BLOCCO DI DEBUG ---
+
+    res.clearCookie('access_token', BASE_COOKIE_OPTIONS);
+    res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
     res.status(200).json({ message: 'User logged out successfully' });
+
 }
 
 const updateUser = async (req, res) => {
@@ -106,7 +118,8 @@ const updateUser = async (req, res) => {
 
         res.status(200).json({ user: clearUserData(updatedUser) });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error during user update:', error);
+        res.status(500).json({messagere: "Error updating user"});
     }
 }
 
@@ -120,10 +133,11 @@ const deleteUser = async (req, res) => {
         // Clear the only cookie that matters
         res.clearCookie('access_token', BASE_COOKIE_OPTIONS);
         res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
-
+        sendDeleteAccount(deletedUser);
         res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error during user deletion:', error);
+        res.status(500).json({ message: 'Error deleting user'});
     }
 };
 
@@ -132,7 +146,8 @@ const checkEmail = async (req, res) => {
         const user = await User.findOne({ email: req.params.email });
         res.status(200).json({ exists: !!user });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Error during email check:', error);
+        res.status(500).json({ message: "Error checking email" });
     }
 };
 
@@ -210,9 +225,9 @@ const emailResetPassword = async (req, res) => {
 
         await sendPasswordResetEmail(user);
         res.status(200).json({ message: 'Password reset email sent successfully' });
-    } catch (error) {
-        console.error('Error during email password reset:', error);
-        res.status(500).json({ message: error.message });
+    } catch (error) { // Messaggio di errore più generico per 500
+        console.error('Error during email password reset:', error); // Logga l'errore dettagliato sul server
+        res.status(500).json({ message: 'An internal server error occurred.' }); // Messaggio generico al client
     }
 }
 

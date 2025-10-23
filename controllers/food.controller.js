@@ -28,8 +28,8 @@ const createFood = async (req, res) => {
         });
         res.status(201).json({ message: "Food created successfully" });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error("Error creating food:",error);
+        res.status(500).json({ message: "Error creating food" });
     }
 }
 
@@ -43,8 +43,8 @@ const getAllFoods = async (req, res) => {
 
         res.status(200).json(foodsWithUrls);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error("Error getting all foods:",error);
+        res.status(500).json({ message: "Error getting all foods"});
     }
 }
 
@@ -60,8 +60,8 @@ const getFoodByCategory = async (req, res) => {
         res.status(200).json(foodsWithUrls);
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error("Error getting foods by category:",error);
+        res.status(500).json({ message: "Error getting foods by category"});
     }
 }
 
@@ -75,8 +75,8 @@ const getFood = async (req, res) => {
         res.status(200).json({ food, imageUrl: signedUrl });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error("Error getting food:",error);
+        res.status(500).json({ message: "Error getting food"});
     }
 }
 
@@ -88,8 +88,8 @@ const updateFood = async (req, res) => {
 
         res.status(200).json(updatedFood);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error("Error updating food:",error);
+        res.status(500).json({ message: "Error updating food"});
     }
 }
 
@@ -100,8 +100,8 @@ const deleteFood = async (req, res) => {
             return res.status(200).json({ message: "Food deleted successfully" });
         res.status(404).json({ error: "Food not found" });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error("Error deleting food:",error);
+        res.status(500).json({message: "Error deleting food"});
     }
 }
 
