@@ -27,7 +27,7 @@ export const sendPasswordResetEmail = async (user) => {
         { expiresIn: '1h' }
     );
 
-    const resetURL = `${process.env.FRONTEND_URL}/resetPassword?token=${restToken}`;
+    const resetURL = `${process.env.FRONTEND_URL}/passwordReset?token=${restToken}`;
     console.log("Reset URL:", resetURL);
     const htmlContent = `<h1>Ciao ${user.firstName},</h1><p>Hai richiesto di reimpostare la tua password. Clicca sul link qui sotto per procedere:</p><a href="${resetURL}">Reimposta Password</a><p>Se non hai richiesto tu questa operazione, puoi ignorare questa email.</p>`;
 

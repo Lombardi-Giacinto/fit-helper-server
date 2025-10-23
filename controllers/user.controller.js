@@ -2,14 +2,13 @@ import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../mail/email.handler.js';
 
-
 const BASE_COOKIE_OPTIONS = {
     httpOnly: true,
     path: '/',
     secure: true,
-    sameSite: 'None',
-};
-// ...BASE_COOKIE_OPTIONS use Spread operator
+    domain: 'fithelper.top',
+    sameSite: 'Lax'
+}
 
 //Generates and sets authentication cookies (access_token and refresh_token)
 const setAuthCookies = (res, user, rememberMe = false) => {
