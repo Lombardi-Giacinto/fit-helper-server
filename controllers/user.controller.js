@@ -72,8 +72,10 @@ const clearUserData = (mongooseDoc) => {
 // ==================================================
 const createUser = async (req, res) => {
     try {
-        const user = await User.create(req.body);
-        sendVerificationEmail(user);
+        const user = new User(req.body);
+        user.lastVerificationEmailSentAt = new Date(); // Imposta il timestamp per la prima email
+        await user.save(); // Salva l'utente prima di inviare l'email per avere l'ID e la versione disponibili
+        await sendVerificationEmail(user);
         res.status(201).json({ message: 'User created successfully' });
     } catch (error) {
         console.error('Error during user creation:', error);
@@ -82,9 +84,34 @@ const createUser = async (req, res) => {
 };
 
 //Handles local user login
-const loginUser = (req, res) => {
-    setAuthCookies(res, req.user, req.body?.rememberMe);
-    res.status(200).json({ user: clearUserData(req.user) });
+const loginUser = async (req, res) => { // Rendi la funzione asincrona
+    const user = req.user;
+    if (!user.isVerified) {
+        const COOLDOWN_MINUTES = 5; // Periodo di cooldown per il reinvio dell'email
+        // Controlla se è possibile inviare una nuova email di verifica (cooldown)
+        if (user.lastVerificationEmailSentAt) {
+            const timeSinceLastEmail = Date.now() - user.lastVerificationEmailSentAt.getTime();
+            const minutesSinceLastEmail = timeSinceLastEmail / (1000 * 60);
+            if (minutesSinceLastEmail < COOLDOWN_MINUTES) {
+                return res.status(403).json({ // 403 Forbidden o 429 Too Many Requests
+                    message: `Il tuo account non è verificato. Riprova a fare il login tra ${Math.ceil(COOLDOWN_MINUTES - minutesSinceLastEmail)} minuti per ricevere una nuova email di verifica.`
+                });
+            }
+        }
+
+        // Se il cooldown è passato o è il primo tentativo, invia una nuova email di verifica
+        user.emailVerificationVersion = (user.emailVerificationVersion || 0) + 1;// Invalidate last token
+        user.lastVerificationEmailSentAt = new Date(); // Aggiorna il timestamp dell'ultimo invio
+        await user.save();
+        await sendVerificationEmail(user);
+
+        return res.status(403).json({ // L'utente non può accedere finché non è verificato
+            message: 'Il tuo account non è verificato. Ti abbiamo inviato una nuova email di verifica. Controlla la tua casella di posta.'
+        });
+    }
+
+    setAuthCookies(res, user, req.body?.rememberMe);
+    res.status(200).json({ user: clearUserData(user) });
 };
 
 const logoutUser = (req, res) => {
@@ -183,6 +210,12 @@ const emailVerification = async (req, res) => {
             verificationStatusUrl.searchParams.set('error', 'user_not_found');
             return res.redirect(verificationStatusUrl.toString());
         }
+
+        // Controlla che la versione del token corrisponda alla versione di verifica corrente dell'utente
+        if (decoded.emailVerificationVersion !== user.emailVerificationVersion) {
+            verificationStatusUrl.searchParams.set('error', 'token_expired'); // O 'invalid_token'
+            return res.redirect(verificationStatusUrl.toString());
+        }
         user.isVerified = true;
         await user.save();
 
@@ -193,19 +226,6 @@ const emailVerification = async (req, res) => {
         console.error('Error during email verification:', error);
         verificationStatusUrl.searchParams.set('error', 'token_expired');
         return res.redirect(verificationStatusUrl.toString());
-    }
-}
-
-const resendVerification = async (req, res) => {
-    try {
-        const user = await User.findOne(req.user.email);
-        if (user.isVerified)
-            return res.status(400).json({ message: 'L\'account è già stato verificato.' });
-        await sendVerificationEmail(user);
-        res.status(200).json({ message: 'Email di verifica inviata con successo.' });
-    } catch (error) {
-        cconsole.error('Errore nel reinvio della verifica:', error);
-        res.status(500).json({ message: 'Errore interno del server.' });
     }
 }
 
@@ -263,7 +283,6 @@ const resetPassword = async (req, res) => {
 export default {
     createUser,
     emailVerification,
-    resendVerification,
     emailResetPassword,
     loginUser,
     logoutUser,

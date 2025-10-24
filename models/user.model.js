@@ -12,11 +12,13 @@ const userSchema = new mongoose.Schema({
     facebookId: { type: String, unique: true, sparse: true },
     birthdate: { type: Date },
     gender: { type: String, enum: ['male', 'female', 'other'], default: 'other' },
-    activity: { type: String, enum: ['sedentary', 'lightlyActive', 'veryActive'], default: 'sedentary' },
+    activity: { type: String, enum: ['sedentary', 'slightlyActive', 'veryActive'], default: 'sedentary' },
     height: { type: Number, default: 0 },//cm
     weight: { type: Number, default: 0 },//Kg
     isVerified: { type: Boolean, default: false },
     passwordVersion: { type: Number, default: 0 },
+    emailVerificationVersion: { type: Number, default: 0 },// invalidate last token
+    lastVerificationEmailSentAt: { type: Date },//cooldown for email spam
 }, { timestamps: true });
 
 //Pre-save hook to hash the user's password before saving it to the database

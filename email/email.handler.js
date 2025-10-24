@@ -4,7 +4,7 @@ import { sendEmail } from './email.service.js';
 
 export const sendVerificationEmail = async (user) => {
     const verificationToken = jwt.sign(
-        { sub: user._id },
+        { sub: user._id, emailVerificationVersion: user.emailVerificationVersion },
         process.env.JWT_VERIFICATION_SECRET,
         { expiresIn: '1d' }
     );
