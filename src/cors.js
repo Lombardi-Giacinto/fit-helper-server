@@ -12,9 +12,8 @@ export const corsOptions = {
 
     if (ALLOWED_ORIGINS.has(origin)) {
       callback(null, true);
-    } else {
-      callback(new Error(`CORS blocked: ${origin} is not allowed.`));
-    }
+    } else if (!origin.includes('localhost'))
+        callback(new Error(`CORS blocked: ${origin} is not allowed.`));
   },
   credentials: true, // Allows cookies, authorization headers, etc.
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

@@ -21,9 +21,9 @@ export const sendVerificationEmail = async (user) => {
 };
 
 export const sendPasswordResetEmail = async (user) => {
-    const restToken = jwt.sign(
-        { sub: user._id }, // Usa 'sub' per coerenza con le altre parti dell'app
-        process.env.JWT_PASSWORD_RESET_SECRET, // Usa un segreto dedicato per il reset password
+    const restToken = jwt.sign({
+        sub: user._id, passwordVersion: user.passwordVersion }, // Aggiungi la versione della password
+        process.env.JWT_PASSWORD_RESET_SECRET,
         { expiresIn: '1h' }
     );
 

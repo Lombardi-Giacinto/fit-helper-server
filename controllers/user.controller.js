@@ -81,8 +81,6 @@ const createUser = async (req, res) => {
     }
 };
 
-
-
 //Handles local user login
 const loginUser = (req, res) => {
     setAuthCookies(res, req.user, req.body?.rememberMe);
@@ -90,16 +88,6 @@ const loginUser = (req, res) => {
 };
 
 const logoutUser = (req, res) => {
-    // --- INIZIO BLOCCO DI DEBUG ---
-    console.log('======================================');
-    console.log('[DEBUG] Richiesta di LOGOUT ricevuta');
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('Origine della richiesta (Origin header):', req.headers.origin);
-    console.log('Cookie header grezzo:', req.headers.cookie);
-    console.log('Cookie ricevuti da cookieParser:', req.cookies);
-    console.log('======================================');
-    // --- FINE BLOCCO DI DEBUG ---
-
     res.clearCookie('access_token', BASE_COOKIE_OPTIONS);
     res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
     res.status(200).json({ message: 'User logged out successfully' });
@@ -179,24 +167,32 @@ const getMe = (req, res) => {
 const emailVerification = async (req, res) => {
     const { token } = req.params;
 
+    const verificationStatusUrl = new URL(`${process.env.FRONTEND_URL}/verificationStatus`);
+
     if (!token) {
         // Reindirizza al frontend con stato di errore
-        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=no_token`);
+        verificationStatusUrl.searchParams.set('error', 'no_token');
+        return res.redirect(verificationStatusUrl.toString());
     }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_VERIFICATION_SECRET);
 
-        const user = await User.findByIdAndUpdate(decoded.sub, { isVerified: true }, { new: true });
+        const user = await User.findById(decoded.sub);
         if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=user_not_found`);
+            verificationStatusUrl.searchParams.set('error', 'user_not_found');
+            return res.redirect(verificationStatusUrl.toString());
         }
+        user.isVerified = true;
+        await user.save();
 
         setAuthCookies(res, user);
-        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?status=success`);
+        verificationStatusUrl.searchParams.set('status', 'success');
+        return res.redirect(verificationStatusUrl.toString());
     } catch (error) {
         console.error('Error during email verification:', error);
-        return res.redirect(`${process.env.FRONTEND_URL}/verificationStatus?error=token_expired`);
+        verificationStatusUrl.searchParams.set('error', 'token_expired');
+        return res.redirect(verificationStatusUrl.toString());
     }
 }
 
@@ -239,13 +235,20 @@ const resetPassword = async (req, res) => {
 
     try {
         const payload = jwt.verify(token, process.env.JWT_PASSWORD_RESET_SECRET);
-        const user = await User.findById(payload.sub);
+        const user = await User.findOne({ _id: payload.sub });
         if (!user) {
             return res.status(404).json({ error: 'User not found.' });
         }
 
+        // Verifica che il token non sia già stato usato (controllo sulla versione)
+        if (payload.passwordVersion !== user.passwordVersion) {
+            return res.status(401).json({ error: 'Invalid or expired password reset token.' });
+        }
+
+        // Il pre-save hook cripterà la password e passwordVersion invalida il token
         user.password = password;
-        await user.save();
+        user.passwordVersion++; 
+        await user.save(); // Il pre-save hook cripterà la password
         res.status(200).json({ message: 'Password reset successfully' });
     } catch (error) {
         console.error('Error during password reset:', error);

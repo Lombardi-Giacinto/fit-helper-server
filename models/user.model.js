@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
     height: { type: Number, default: 0 },//cm
     weight: { type: Number, default: 0 },//Kg
     isVerified: { type: Boolean, default: false },
+    passwordVersion: { type: Number, default: 0 },
 }, { timestamps: true });
 
 //Pre-save hook to hash the user's password before saving it to the database
