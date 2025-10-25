@@ -15,10 +15,14 @@ const userSchema = new mongoose.Schema({
     activity: { type: String, enum: ['sedentary', 'slightlyActive', 'veryActive'], default: 'sedentary' },
     height: { type: Number, default: 0 },//cm
     weight: { type: Number, default: 0 },//Kg
-    isVerified: { type: Boolean, default: false },
-    passwordVersion: { type: Number, default: 0 },
-    emailVerificationVersion: { type: Number, default: 0 },// invalidate last token
-    lastVerificationEmailSentAt: { type: Date },//cooldown for email spam
+    authMetadata: {
+        isVerified: { type: Boolean, default: false },
+        canReceiveEmails: { type: Boolean, default: true }, 
+        passwordVersion: { type: Number, default: 0 },
+        emailVerificationVersion: { type: Number, default: 0 }, 
+        lastVerificationEmailSentAt: { type: Date },
+        bounceType: { type: String, default: null }
+    }
 }, { timestamps: true });
 
 //Pre-save hook to hash the user's password before saving it to the database

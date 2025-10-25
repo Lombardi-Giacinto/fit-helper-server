@@ -1,6 +1,6 @@
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
-import { sendVerificationEmail, sendPasswordResetEmail,sendDeleteAccount } from '../email/email.handler.js';
+import { sendVerificationEmail, sendPasswordResetEmail, sendDeleteAccount } from '../email/email.handler.js';
 
 const BASE_COOKIE_OPTIONS = {
     httpOnly: true,
@@ -73,7 +73,7 @@ const clearUserData = (mongooseDoc) => {
 const createUser = async (req, res) => {
     try {
         const user = new User(req.body);
-        user.lastVerificationEmailSentAt = new Date(); // Imposta il timestamp per la prima email
+        user.authMetadata.lastVerificationEmailSentAt = new Date(); // Imposta il timestamp per la prima email
         await user.save(); // Salva l'utente prima di inviare l'email per avere l'ID e la versione disponibili
         await sendVerificationEmail(user);
         res.status(201).json({ message: 'User created successfully' });
@@ -86,11 +86,11 @@ const createUser = async (req, res) => {
 //Handles local user login
 const loginUser = async (req, res) => { // Rendi la funzione asincrona
     const user = req.user;
-    if (!user.isVerified) {
+    if (!user.authMetadata.isVerified) {
         const COOLDOWN_MINUTES = 5; // Periodo di cooldown per il reinvio dell'email
         // Controlla se è possibile inviare una nuova email di verifica (cooldown)
-        if (user.lastVerificationEmailSentAt) {
-            const timeSinceLastEmail = Date.now() - user.lastVerificationEmailSentAt.getTime();
+        if (user.authMetadata.lastVerificationEmailSentAt) {
+            const timeSinceLastEmail = Date.now() - user.authMetadata.lastVerificationEmailSentAt.getTime();
             const minutesSinceLastEmail = timeSinceLastEmail / (1000 * 60);
             if (minutesSinceLastEmail < COOLDOWN_MINUTES) {
                 return res.status(403).json({ // 403 Forbidden o 429 Too Many Requests
@@ -100,8 +100,8 @@ const loginUser = async (req, res) => { // Rendi la funzione asincrona
         }
 
         // Se il cooldown è passato o è il primo tentativo, invia una nuova email di verifica
-        user.emailVerificationVersion = (user.emailVerificationVersion || 0) + 1;// Invalidate last token
-        user.lastVerificationEmailSentAt = new Date(); // Aggiorna il timestamp dell'ultimo invio
+        user.authMetadata.emailVerificationVersion = (user.authMetadata.emailVerificationVersion || 0) + 1;// Invalidate last token
+        user.authMetadata.lastVerificationEmailSentAt = new Date(); // Aggiorna il timestamp dell'ultimo invio
         await user.save();
         await sendVerificationEmail(user);
 
@@ -134,7 +134,7 @@ const updateUser = async (req, res) => {
         res.status(200).json({ user: clearUserData(updatedUser) });
     } catch (error) {
         console.error('Error during user update:', error);
-        res.status(500).json({message: "Error updating user"});
+        res.status(500).json({ message: "Error updating user" });
     }
 }
 
@@ -152,7 +152,7 @@ const deleteUser = async (req, res) => {
         res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
         console.error('Error during user deletion:', error);
-        res.status(500).json({ message: 'Error deleting user'});
+        res.status(500).json({ message: 'Error deleting user' });
     }
 };
 
@@ -212,11 +212,11 @@ const emailVerification = async (req, res) => {
         }
 
         // Controlla che la versione del token corrisponda alla versione di verifica corrente dell'utente
-        if (decoded.emailVerificationVersion !== user.emailVerificationVersion) {
+        if (decoded.emailVerificationVersion !== user.authMetadata.emailVerificationVersion) {
             verificationStatusUrl.searchParams.set('error', 'token_expired'); // O 'invalid_token'
             return res.redirect(verificationStatusUrl.toString());
         }
-        user.isVerified = true;
+        user.authMetadata.isVerified = true;
         await user.save();
 
         setAuthCookies(res, user);
@@ -234,10 +234,19 @@ const emailResetPassword = async (req, res) => {
         const user = await User.findOne({ email: req.params.email });
         if (!user)
             return res.status(404).json({ message: 'user_not_found' });
-        if (!user.isVerified)
+        if (!user.authMetadata.isVerified)
             return res.status(400).json({ message: 'not_verified' });
         if (user.googleId || user.facebookId)
             return res.status(400).json({ message: 'social_account' });
+
+        if (user.canReceiveEmails === false) {
+            console.warn(`Tentativo di invio bloccato per l'utente ${user.email}: Bloccato da SES Feedback.`);
+
+            // Risposta non specifica all'utente per sicurezza
+            return res.status(500).json({
+                message: 'Si è verificato un errore tecnico nell\'invio dell\'e-mail. Contatta il supporto.'
+            });
+        }
 
         await sendPasswordResetEmail(user);
         res.status(200).json({ message: 'Password reset email sent successfully' });
@@ -261,13 +270,13 @@ const resetPassword = async (req, res) => {
         }
 
         // Verifica che il token non sia già stato usato (controllo sulla versione)
-        if (payload.passwordVersion !== user.passwordVersion) {
+        if (payload.passwordVersion !== user.authMetadata.passwordVersion) {
             return res.status(401).json({ error: 'Invalid or expired password reset token.' });
         }
 
         // Il pre-save hook cripterà la password e passwordVersion invalida il token
         user.password = password;
-        user.passwordVersion++; 
+        user.authMetadata.passwordVersion++;
         await user.save(); // Il pre-save hook cripterà la password
         res.status(200).json({ message: 'Password reset successfully' });
     } catch (error) {

@@ -4,7 +4,7 @@ import { sendEmail } from './email.service.js';
 
 export const sendVerificationEmail = async (user) => {
     const verificationToken = jwt.sign(
-        { sub: user._id, emailVerificationVersion: user.emailVerificationVersion },
+        { sub: user._id, emailVerificationVersion: user.authMetadata.emailVerificationVersion },
         process.env.JWT_VERIFICATION_SECRET,
         { expiresIn: '1d' }
     );
@@ -22,7 +22,7 @@ export const sendVerificationEmail = async (user) => {
 
 export const sendPasswordResetEmail = async (user) => {
     const restToken = jwt.sign({
-        sub: user._id, passwordVersion: user.passwordVersion }, // Aggiungi la versione della password
+        sub: user._id, passwordVersion: user.authMetadata.passwordVersion }, // Aggiungi la versione della password
         process.env.JWT_PASSWORD_RESET_SECRET,
         { expiresIn: '1h' }
     );
