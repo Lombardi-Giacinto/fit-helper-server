@@ -134,7 +134,7 @@ const updateUser = async (req, res) => {
         res.status(200).json({ user: clearUserData(updatedUser) });
     } catch (error) {
         console.error('Error during user update:', error);
-        res.status(500).json({messagere: "Error updating user"});
+        res.status(500).json({message: "Error updating user"});
     }
 }
 
