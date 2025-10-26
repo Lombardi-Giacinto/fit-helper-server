@@ -137,18 +137,19 @@ const updateUser = async (req, res) => {
     try {
         console.log('[DEBUG] Inside updateUser controller. req.body is:', req.body);
         // Seleziona solo i campi che possono essere aggiornati per evitare il "mass assignment"
-        const allowedUpdates = {
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            birthdate: req.body.birthdate,
-            gender: req.body.gender,
-            activity: req.body.activity,
-            height: req.body.height,
-            weight: req.body.weight,
-        };
+        const allowedUpdateKeys = ['firstName', 'lastName', 'birthdate', 'gender', 'activity', 'height', 'weight'];
+        const updatesToApply = {};
+
+        // Itera sui campi inviati nel body e aggiungi solo quelli permessi
+        Object.keys(req.body).forEach(key => {
+            if (allowedUpdateKeys.includes(key)) {
+                updatesToApply[key] = req.body[key];
+            }
+        });
+
         const updatedUser = await User.findOneAndUpdate(
             req.user._id,
-            { $set: allowedUpdates },
+            { $set: updatesToApply },
             { new: true, runValidators: true }
         );
         if (!updatedUser)

@@ -63,7 +63,7 @@ router.get('/loginFacebook/start', passport.authenticate('facebook', { scope: ['
 // ==================================================
 //* PROTECTED ROUTES (REQUIRE JWT AUTHENTICATION)
 // ==================================================
-router.put('/update',
+router.put('/update', express.json(), // Aggiungi il middleware di parsing del body qui
   passport.authenticate('jwt', { session: false }),
   (req, res, next) => { // Middleware di debug
     console.log('[DEBUG] Inside route, before controller.');
