@@ -62,13 +62,13 @@ if (process.env.NODE_ENV === 'development') {
     next();
   });
 }
-// Compress all responses to improve performance.
-app.use(compression());
 app.use(passport.initialize());
 
 // ==================================================
 // ROUTES
 // ==================================================
+// Compress all responses to improve performance.
+app.use(compression());
 app.get('/', (req, res) => {
   res.json('Home Test');
 });
