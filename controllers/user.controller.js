@@ -72,8 +72,20 @@ const clearUserData = (mongooseDoc) => {
 // ==================================================
 const createUser = async (req, res) => {
     try {
-        const user = new User(req.body);
-        user.authMetadata.lastVerificationEmailSentAt = new Date(); // Imposta il timestamp per la prima email
+        // Costruisci l'oggetto utente manualmente per garantire la coerenza con lo schema
+        const userData = {
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            email: req.body.email,
+            password: req.body.password,
+            birthdate: req.body.birthdate,
+            gender: req.body.gender,
+            activity: req.body.activity,
+            height: req.body.height,
+            weight: req.body.weight,
+        };
+        const user = new User(userData);
+        user.authMetadata.emailVerification.lastSentAt = new Date(); // Imposta il timestamp per la prima email
         await user.save(); // Salva l'utente prima di inviare l'email per avere l'ID e la versione disponibili
         await sendVerificationEmail(user);
         res.status(201).json({ message: 'User created successfully' });
@@ -86,11 +98,11 @@ const createUser = async (req, res) => {
 //Handles local user login
 const loginUser = async (req, res) => { // Rendi la funzione asincrona
     const user = req.user;
-    if (!user.authMetadata.isVerified) {
+    if (!user.authMetadata.emailVerification.isVerified) {
         const COOLDOWN_MINUTES = 5; // Periodo di cooldown per il reinvio dell'email
         // Controlla se è possibile inviare una nuova email di verifica (cooldown)
-        if (user.authMetadata.lastVerificationEmailSentAt) {
-            const timeSinceLastEmail = Date.now() - user.authMetadata.lastVerificationEmailSentAt.getTime();
+        if (user.authMetadata.emailVerification.lastSentAt) {
+            const timeSinceLastEmail = Date.now() - user.authMetadata.emailVerification.lastSentAt.getTime();
             const minutesSinceLastEmail = timeSinceLastEmail / (1000 * 60);
             if (minutesSinceLastEmail < COOLDOWN_MINUTES) {
                 return res.status(403).json({ // 403 Forbidden o 429 Too Many Requests
@@ -100,8 +112,8 @@ const loginUser = async (req, res) => { // Rendi la funzione asincrona
         }
 
         // Se il cooldown è passato o è il primo tentativo, invia una nuova email di verifica
-        user.authMetadata.emailVerificationVersion = (user.authMetadata.emailVerificationVersion || 0) + 1;// Invalidate last token
-        user.authMetadata.lastVerificationEmailSentAt = new Date(); // Aggiorna il timestamp dell'ultimo invio
+        user.authMetadata.emailVerification.version = (user.authMetadata.emailVerification.version || 0) + 1;// Invalidate last token
+        user.authMetadata.emailVerification.lastSentAt = new Date(); // Aggiorna il timestamp dell'ultimo invio
         await user.save();
         await sendVerificationEmail(user);
 
@@ -123,9 +135,19 @@ const logoutUser = (req, res) => {
 
 const updateUser = async (req, res) => {
     try {
+        // Seleziona solo i campi che possono essere aggiornati per evitare il "mass assignment"
+        const allowedUpdates = {
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            birthdate: req.body.birthdate,
+            gender: req.body.gender,
+            activity: req.body.activity,
+            height: req.body.height,
+            weight: req.body.weight,
+        };
         const updatedUser = await User.findOneAndUpdate(
             req.user._id,
-            req.body,
+            { $set: allowedUpdates },
             { new: true, runValidators: true }
         );
         if (!updatedUser)
@@ -212,11 +234,11 @@ const emailVerification = async (req, res) => {
         }
 
         // Controlla che la versione del token corrisponda alla versione di verifica corrente dell'utente
-        if (decoded.emailVerificationVersion !== user.authMetadata.emailVerificationVersion) {
+        if (decoded.version !== user.authMetadata.emailVerification.version) {
             verificationStatusUrl.searchParams.set('error', 'token_expired'); // O 'invalid_token'
             return res.redirect(verificationStatusUrl.toString());
         }
-        user.authMetadata.isVerified = true;
+        user.authMetadata.emailVerification.isVerified = true;
         await user.save();
 
         setAuthCookies(res, user);
@@ -234,12 +256,12 @@ const emailResetPassword = async (req, res) => {
         const user = await User.findOne({ email: req.params.email });
         if (!user)
             return res.status(404).json({ message: 'user_not_found' });
-        if (!user.authMetadata.isVerified)
+        if (!user.authMetadata.emailVerification.isVerified)
             return res.status(400).json({ message: 'not_verified' });
         if (user.googleId || user.facebookId)
             return res.status(400).json({ message: 'social_account' });
 
-        if (user.canReceiveEmails === false) {
+        if (user.authMetadata.emailDeliverability.canReceiveEmails === false) {
             console.warn(`Tentativo di invio bloccato per l'utente ${user.email}: Bloccato da SES Feedback.`);
 
             // Risposta non specifica all'utente per sicurezza
@@ -270,13 +292,13 @@ const resetPassword = async (req, res) => {
         }
 
         // Verifica che il token non sia già stato usato (controllo sulla versione)
-        if (payload.passwordVersion !== user.authMetadata.passwordVersion) {
+        if (payload.version !== user.authMetadata.passwordReset.version) {
             return res.status(401).json({ error: 'Invalid or expired password reset token.' });
         }
 
         // Il pre-save hook cripterà la password e passwordVersion invalida il token
         user.password = password;
-        user.authMetadata.passwordVersion++;
+        user.authMetadata.passwordReset.version++;
         await user.save(); // Il pre-save hook cripterà la password
         res.status(200).json({ message: 'Password reset successfully' });
     } catch (error) {

@@ -16,12 +16,18 @@ const userSchema = new mongoose.Schema({
     height: { type: Number, default: 0 },//cm
     weight: { type: Number, default: 0 },//Kg
     authMetadata: {
-        isVerified: { type: Boolean, default: false },
-        canReceiveEmails: { type: Boolean, default: true }, 
-        passwordVersion: { type: Number, default: 0 },
-        emailVerificationVersion: { type: Number, default: 0 }, 
-        lastVerificationEmailSentAt: { type: Date },
-        bounceType: { type: String, default: null }
+        emailVerification: {
+            isVerified: { type: Boolean, default: false },
+            version: { type: Number, default: 0 },
+            lastSentAt: { type: Date }
+        },
+        passwordReset: {
+            version: { type: Number, default: 0 }
+        },
+        emailDeliverability: {
+            canReceiveEmails: { type: Boolean, default: true },
+            bounceType: { type: String, default: null }
+        }
     }
 }, { timestamps: true });
 
