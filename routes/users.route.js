@@ -14,8 +14,8 @@ const router = express.Router();
 router.post('/register', UserController.createUser);
 router.get("/checkEmail/:email", UserController.checkEmail);
 router.get('/verifyEmail/:token', UserController.emailVerification);
-router.get('/resetPasswordRequest/:email',UserController.emailResetPassword);
-router.post('/resetPassword',UserController.resetPassword);
+router.get('/resetPasswordRequest/:email', UserController.emailResetPassword);
+router.post('/resetPassword', UserController.resetPassword);
 
 
 // ==================================================
@@ -63,14 +63,8 @@ router.get('/loginFacebook/start', passport.authenticate('facebook', { scope: ['
 // ==================================================
 //* PROTECTED ROUTES (REQUIRE JWT AUTHENTICATION)
 // ==================================================
-router.put('/update', express.json(),
+router.put('/update',
   passport.authenticate('jwt', { session: false }),
-  (req, res, next) => { // Middleware di debug
-    console.log('[DEBUG] Inside route, before controller.');
-    console.log('[DEBUG] req.user from Passport:', !!req.user);
-    console.log('[DEBUG] req.body before controller:', req.body);
-    next();
-  },
   UserController.updateUser);
 router.delete('/delete', passport.authenticate('jwt', { session: false }), UserController.deleteUser);
 // Route to get user data after redirect

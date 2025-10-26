@@ -82,7 +82,7 @@ const createUser = async (req, res) => {
             gender: req.body.gender,
             activity: req.body.activity,
             height: req.body.height,
-            weight: req.body.weight,
+            weight: req.body.weight
         };
         const user = new User(userData);
         user.authMetadata.emailVerification.lastSentAt = new Date(); // Imposta il timestamp per la prima email
@@ -135,17 +135,15 @@ const logoutUser = (req, res) => {
 
 const updateUser = async (req, res) => {
     try {
-        console.log('[DEBUG] Inside updateUser controller. req.body is:', req.body);
         // Seleziona solo i campi che possono essere aggiornati per evitare il "mass assignment"
-        const allowedUpdateKeys = ['firstName', 'lastName', 'birthdate', 'gender', 'activity', 'height', 'weight'];
-        const updatesToApply = {};
-
-        // Itera sui campi inviati nel body e aggiungi solo quelli permessi
-        Object.keys(req.body).forEach(key => {
-            if (allowedUpdateKeys.includes(key)) {
-                updatesToApply[key] = req.body[key];
+        const allowedUpdateKeys = new Set(['firstName', 'lastName', 'birthdate', 'gender', 'activity', 'height', 'weight']);
+        
+        const updatesToApply = Object.keys(req.body).reduce((acc, key) => {
+            if (allowedUpdateKeys.has(key)) {
+                acc[key] = req.body[key];
             }
-        });
+            return acc;
+        }, {});
 
         const updatedUser = await User.findOneAndUpdate(
             req.user._id,
