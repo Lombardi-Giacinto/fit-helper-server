@@ -55,25 +55,19 @@ app.use(hpp());
 // Enable logging in development environment for debugging purposes
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
-  app.use((req, res, next) => {
-    console.log(`[DEBUG] ---- Request Start: ${req.method} ${req.originalUrl} ----`);
-    console.log('[DEBUG] req.cookies:', req.cookies);
-    console.log('[DEBUG] req.body after parsing:', req.body);
-    next();
-  });
 }
 app.use(passport.initialize());
 
 // ==================================================
 // ROUTES
 // ==================================================
-// Compress all responses to improve performance.
-app.use(compression());
 app.get('/', (req, res) => {
   res.json('Home Test');
 });
 app.use('/api', router);
 
+// Compress all responses to improve performance.
+//app.use(compression());
 // ==================================================
 // ERROR HANDLING
 // ==================================================

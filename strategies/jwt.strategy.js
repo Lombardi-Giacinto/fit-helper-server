@@ -10,26 +10,19 @@ import User from '../models/user.model.js';
  * @returns {string|null} The JWT or null if not found.
  */
 const cookieExtractor = (req) => {
-    if (process.env.NODE_ENV === 'development') {
-        console.log("[DEBUG] Executing cookieExtractor in JWT strategy.");
-        console.log("[DEBUG] Full headers in strategy:", req.headers);
-    }
     return req.cookies?.access_token || null
 };
 
 const options = {
     jwtFromRequest: cookieExtractor,
-    secretOrKey: process.env.JWT_SECRET,
-    passReqToCallback: true // Passa l'oggetto req alla callback di verifica
+    secretOrKey: process.env.JWT_SECRET
 };
 
 // This function is called when a JWT is successfully extracted and decoded.
-export default passport.use(new JwtStrategy(options, async (req, jwt_payload, done) => {
+export default passport.use(new JwtStrategy(options, async (jwt_payload, done) => {
     try {
         if (process.env.NODE_ENV === 'development') {
             console.log('[DEBUG] JWT payload received:', jwt_payload);
-            // Log di debug per verificare lo stato di req.body all'interno della strategia
-            console.log('[DEBUG] req.body inside JWT strategy:', req.body);
         }
         const user = await User.findById(jwt_payload.sub);
 

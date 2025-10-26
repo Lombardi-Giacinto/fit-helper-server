@@ -63,7 +63,7 @@ router.get('/loginFacebook/start', passport.authenticate('facebook', { scope: ['
 // ==================================================
 //* PROTECTED ROUTES (REQUIRE JWT AUTHENTICATION)
 // ==================================================
-router.put('/update', express.json(), // Aggiungi il middleware di parsing del body qui
+router.put('/update', express.json(),
   passport.authenticate('jwt', { session: false }),
   (req, res, next) => { // Middleware di debug
     console.log('[DEBUG] Inside route, before controller.');
@@ -71,7 +71,7 @@ router.put('/update', express.json(), // Aggiungi il middleware di parsing del b
     console.log('[DEBUG] req.body before controller:', req.body);
     next();
   },
-  UserController.updateUser)
+  UserController.updateUser);
 router.delete('/delete', passport.authenticate('jwt', { session: false }), UserController.deleteUser);
 // Route to get user data after redirect
 router.get('/me', passport.authenticate('jwt', { session: false }), UserController.getMe);
