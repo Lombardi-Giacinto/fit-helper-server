@@ -26,7 +26,9 @@ const userSchema = new mongoose.Schema({
         },
         emailDeliverability: {
             canReceiveEmails: { type: Boolean, default: true },
-            bounceType: { type: String, default: null }
+            bounceType: { type: String, default: null },
+            bounceSubType: { type: String, default: null },
+            lastBounceDate: { type: Date }
         }
     }
 }, { timestamps: true });

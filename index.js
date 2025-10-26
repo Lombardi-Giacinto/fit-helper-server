@@ -36,7 +36,6 @@ app.use(cors(corsOptions));
 app.use(hpp());
 // Set various HTTP headers to help secure the app.
 app.use(helmet());
-
 app.set('trust proxy', 1);
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
