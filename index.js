@@ -56,8 +56,9 @@ app.use(hpp());
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
   app.use((req, res, next) => {
-    console.log('[DEBUG] Request Headers:', req.headers);
-    console.log('[DEBUG] Cookies received from cookieParser:', req.cookies);
+    console.log(`[DEBUG] ---- Request Start: ${req.method} ${req.originalUrl} ----`);
+    console.log('[DEBUG] req.cookies:', req.cookies);
+    console.log('[DEBUG] req.body after parsing:', req.body);
     next();
   });
 }

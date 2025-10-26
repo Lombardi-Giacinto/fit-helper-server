@@ -135,6 +135,7 @@ const logoutUser = (req, res) => {
 
 const updateUser = async (req, res) => {
     try {
+        console.log('[DEBUG] Inside updateUser controller. req.body is:', req.body);
         // Seleziona solo i campi che possono essere aggiornati per evitare il "mass assignment"
         const allowedUpdates = {
             firstName: req.body.firstName,
