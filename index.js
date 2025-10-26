@@ -32,8 +32,14 @@ mongoose.set('debug', true);
 // ==================================================
 // Enable Cross-Origin Resource Sharing with specific options.
 app.use(cors(corsOptions));
-// Protect against HTTP Parameter Pollution attacks.
-app.use(hpp());
+
+// ==================================================
+//* BODY AND COOKIE PARSING MIDDLEWARE (ESEGUIRE PRIMA DELLA SICUREZZA)
+// ==================================================
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
 // Set various HTTP headers to help secure the app.
 app.use(helmet());
 app.set('trust proxy', 1);
@@ -44,13 +50,8 @@ const limiter = rateLimit({
   legacyHeaders: false, // Disable  X-RateLimit-*
 });
 app.use(limiter);
-
-// ==================================================
-//* OTHER MIDDLEWARE
-// ==================================================
-app.use(express.json({ limit: "10kb" }));
-app.use(cookieParser());
-app.use(express.urlencoded({ extended: false }));
+// Protect against HTTP Parameter Pollution attacks.
+app.use(hpp());
 // Enable logging in development environment for debugging purposes
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));

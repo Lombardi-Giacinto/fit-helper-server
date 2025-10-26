@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from 'passport';
-import '../strategies/local.stratagy.js';
+import '../strategies/local.strategy.js';
 import '../strategies/jwt.strategy.js';
 import '../strategies/google.strategy.js';
 import '../strategies/facebook.strategy.js';
